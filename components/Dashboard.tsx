@@ -1,15 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
-import { Lead, LeadStatus, LeadFormData, Priority, Task } from '../types';
+import React, { useEffect, useState, useRef } from 'react';
+import { Lead, LeadStatus, LeadFormData, Priority, Task, Language } from '../types';
 import { fetchLeads, updateLead, deleteLead, submitLead } from '../services/leadService';
-/* Added TrendingUp and ChevronRight to the lucide-react imports */
 import { 
     Loader2, AlertCircle, Filter, Search, Clock, ArrowUpDown, Pencil, Check, X, 
     Briefcase, UserCheck, GraduationCap, Users, XCircle, Trash2, Plus, Calendar, 
     LayoutGrid, List as ListIcon, BarChart3, CheckSquare, Square, FileText, Send, Mail, MessageSquare,
-    Phone, GripVertical, Copy, ExternalLink, TrendingUp, ChevronRight
+    Phone, GripVertical, Copy, ExternalLink, TrendingUp, ChevronRight, Sparkles, BrainCircuit
 } from 'lucide-react';
-import { isSupabaseConfigured } from '../services/supabaseClient';
+import { useTranslation } from '../services/translations';
 
 type SortConfig = {
     key: 'createdAt' | 'status' | 'score';
@@ -18,15 +17,23 @@ type SortConfig = {
 
 type DashboardView = 'PIPELINE_LIST' | 'PIPELINE_BOARD' | 'PLANNING' | 'METRICS';
 
-const Dashboard: React.FC = () => {
+interface DashboardProps {
+  language: Language;
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ language }) => {
+  const t = useTranslation(language);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [viewMode, setViewMode] = useState<DashboardView>('PIPELINE_BOARD');
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  
+  // Drag and Drop State
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<LeadStatus | null>(null);
+  const dragCounter = useRef<Record<string, number>>({});
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
@@ -100,7 +107,7 @@ const Dashboard: React.FC = () => {
 
   const sendPersonalizedEmail = (lead: Lead) => {
       const subject = encodeURIComponent(`Regarding your application for ${lead.postAppliedFor} at ProAgo`);
-      const body = encodeURIComponent(`Hi ${lead.fullName},\n\nThis is the recruitment team from ProAgo World. We were impressed by your profile submitted via ${lead.source}.\n\nWe would like to invite you for a first interview. Please let us know when you are available this week.\n\nBest regards,\nProAgo Recruitment`);
+      const body = encodeURIComponent(`Hi ${lead.fullName},\n\nThis is the recruitment team from ProAgo World. We were impressed by your profile submitted via ${lead.source}.\n\nBest regards,\nProAgo Recruitment`);
       window.location.href = `mailto:${lead.email}?subject=${subject}&body=${body}`;
   };
 
@@ -129,13 +136,22 @@ const Dashboard: React.FC = () => {
   }, [leads, filter]);
 
   const PriorityBadge = ({ priority }: { priority: Priority }) => {
-      const colors = { 'High': 'bg-red-100 text-red-700 border-red-200', 'Medium': 'bg-orange-100 text-orange-700 border-orange-200', 'Low': 'bg-slate-100 text-slate-600 border-slate-200' };
+      const colors = { 'High': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800', 'Medium': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800', 'Low': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700' };
       return <span className={`px-2 py-0.5 rounded text-xs font-medium border ${colors[priority]}`}>{priority}</span>;
   };
 
-  const ScoreBadge = ({ score }: { score: number }) => {
-      const color = score >= 80 ? 'text-green-600 font-bold' : score >= 50 ? 'text-yellow-600 font-medium' : 'text-slate-600';
-      return <div className={`text-xs ${color}`}>Score: {score}</div>
+  const ScoreBadge = ({ score, aiScore }: { score: number, aiScore?: number }) => {
+      const color = score >= 80 ? 'text-green-600 dark:text-green-400 font-bold' : score >= 50 ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-slate-600 dark:text-slate-400';
+      return (
+        <div className="flex flex-col">
+          <div className={`text-xs ${color}`}>Overall: {Math.round(score)}</div>
+          {aiScore !== undefined && (
+            <div className="flex items-center gap-1 text-[9px] text-indigo-500 dark:text-indigo-400 font-black uppercase tracking-widest">
+              <Sparkles className="w-2.5 h-2.5" /> AI: {aiScore}
+            </div>
+          )}
+        </div>
+      );
   };
 
   const KanbanColumn = ({ status, title, icon: Icon }: { status: LeadStatus, title: string, icon: any }) => {
@@ -144,31 +160,53 @@ const Dashboard: React.FC = () => {
 
       return (
           <div 
-            className={`flex-1 min-w-[300px] rounded-xl flex flex-col h-full max-h-full border transition-all duration-200 ${
-              isOver ? 'bg-indigo-50 border-indigo-300 scale-[1.01]' : 'bg-slate-50 border-slate-200'
+            className={`flex-1 min-w-[320px] rounded-2xl flex flex-col h-full max-h-full border-2 transition-all duration-300 ease-out ${
+              isOver 
+                ? 'bg-indigo-50/80 dark:bg-indigo-900/10 border-indigo-400 shadow-lg scale-[1.02] ring-4 ring-indigo-500/10' 
+                : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm'
             }`} 
-            onDragOver={(e) => {
+            onDragEnter={(e) => {
               e.preventDefault();
+              dragCounter.current[status] = (dragCounter.current[status] || 0) + 1;
               setDropTargetStatus(status);
             }}
-            onDragLeave={() => setDropTargetStatus(null)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              dragCounter.current[status] = (dragCounter.current[status] || 0) - 1;
+              if (dragCounter.current[status] <= 0) {
+                setDropTargetStatus(null);
+                dragCounter.current[status] = 0;
+              }
+            }}
             onDrop={async (e) => {
               e.preventDefault();
               setDropTargetStatus(null);
+              dragCounter.current[status] = 0;
               if (draggedLeadId) {
                 await handleStatusChange(draggedLeadId, status);
                 setDraggedLeadId(null);
               }
             }}
           >
-              <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white rounded-t-xl">
+              <div className={`p-4 border-b-2 flex justify-between items-center transition-colors duration-300 rounded-t-2xl ${
+                isOver ? 'bg-white dark:bg-slate-800 border-indigo-400' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700'
+              }`}>
                   <div className="flex items-center gap-2">
-                      <Icon className={`w-4 h-4 ${isOver ? 'text-indigo-600' : 'text-slate-500'}`} />
-                      <h3 className={`font-bold text-sm ${isOver ? 'text-indigo-900' : 'text-slate-700'}`}>{title}</h3>
+                      <Icon className={`w-5 h-5 transition-colors ${isOver ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`} />
+                      <h3 className={`font-black text-sm uppercase tracking-widest italic ${isOver ? 'text-indigo-900 dark:text-indigo-50' : 'text-slate-700 dark:text-slate-300'}`}>{title}</h3>
                   </div>
-                  <span className="bg-slate-100 text-slate-600 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{columnLeads.length}</span>
+                  <span className={`transition-all duration-300 text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-wider ${
+                    isOver ? 'bg-indigo-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                  }`}>
+                    {columnLeads.length}
+                  </span>
               </div>
-              <div className="p-3 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+              
+              <div className="p-3 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
                   {columnLeads.map(lead => (
                       <div 
                         key={lead.id} 
@@ -176,53 +214,58 @@ const Dashboard: React.FC = () => {
                         onDragStart={(e) => {
                           setDraggedLeadId(lead.id);
                           e.dataTransfer.effectAllowed = 'move';
-                          // Add a slight delay for better click/drag separation
+                          e.dataTransfer.setData('text/plain', lead.id);
                           setTimeout(() => {
-                            if (e.target instanceof HTMLElement) e.target.style.opacity = '0.5';
+                            if (e.target instanceof HTMLElement) {
+                                e.target.classList.add('opacity-30');
+                                e.target.classList.add('scale-95');
+                            }
                           }, 0);
                         }}
                         onDragEnd={(e) => {
-                          if (e.target instanceof HTMLElement) e.target.style.opacity = '1';
+                          if (e.target instanceof HTMLElement) {
+                            e.target.classList.remove('opacity-30');
+                            e.target.classList.remove('scale-95');
+                          }
                           setDraggedLeadId(null);
+                          setDropTargetStatus(null);
                         }}
-                        className={`bg-white p-4 rounded-xl shadow-sm border border-slate-200 cursor-grab active:cursor-grabbing hover:shadow-md transition-all group relative ${
-                          draggedLeadId === lead.id ? 'ring-2 ring-indigo-500 ring-offset-2' : ''
-                        }`} 
+                        className={`bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border-2 border-slate-100 dark:border-slate-700 cursor-grab active:cursor-grabbing hover:shadow-xl transition-all duration-200 group relative ${
+                          draggedLeadId === lead.id ? 'z-0 border-indigo-200' : 'hover:border-indigo-100 dark:hover:border-indigo-900 z-10'
+                        } ${draggedLeadId && draggedLeadId !== lead.id ? 'pointer-events-none' : ''}`} 
                         onClick={() => { 
-                          setEditingLead(lead); 
-                          setIsEditModalOpen(true); 
+                          if (!draggedLeadId) {
+                            setEditingLead(lead); 
+                            setIsEditModalOpen(true); 
+                          }
                         }}
                       >
                           <div className="flex justify-between items-start mb-3">
                               <div className="flex flex-col">
-                                <h4 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">{lead.fullName}</h4>
+                                <h4 className="font-black text-slate-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors uppercase tracking-tight italic">{lead.fullName}</h4>
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5">{lead.postAppliedFor}</p>
                               </div>
                               <PriorityBadge priority={lead.priority} />
                           </div>
                           
-                          <div className="flex items-center gap-3 text-xs text-slate-500 mb-4">
-                            <div className="flex items-center gap-1"><Mail className="w-3 h-3" /> <span className="truncate max-w-[100px]">{lead.email.split('@')[0]}</span></div>
-                            <div className="flex items-center gap-1"><Phone className="w-3 h-3" /> <span>...{lead.phone.slice(-4)}</span></div>
+                          <div className="flex items-center gap-3 text-[10px] font-bold text-slate-400 mb-4 uppercase">
+                            <div className="flex items-center gap-1"><Mail className="w-3 h-3 text-slate-300 dark:text-slate-600" /> <span className="truncate max-w-[100px]">{lead.email.split('@')[0]}</span></div>
+                            <div className="flex items-center gap-1"><Phone className="w-3 h-3 text-slate-300 dark:text-slate-600" /> <span>...{lead.phone.slice(-4)}</span></div>
                           </div>
 
-                          <div className="flex justify-between items-center pt-3 border-t border-slate-50">
-                              <div className="flex gap-2 items-center">
-                                <ScoreBadge score={lead.score} />
-                                {lead.cvBase64 && <span title="CV Attached"><FileText className="w-3 h-3 text-indigo-400" /></span>}
+                          <div className="flex justify-between items-center pt-3 border-t border-slate-50 dark:border-slate-700/50">
+                              <div className="flex gap-4 items-center">
+                                <ScoreBadge score={lead.score} aiScore={lead.aiScore} />
+                                {lead.cvBase64 && <span title="CV Attached"><FileText className="w-3.5 h-3.5 text-indigo-400" /></span>}
                               </div>
                               <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase"><Clock className="w-3 h-3 mr-1" />{new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</div>
                           </div>
-                          
-                          {/* Visual Handle Icon */}
-                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <GripVertical className="w-4 h-4 text-slate-300" />
-                          </div>
                       </div>
                   ))}
-                  {columnLeads.length === 0 && !isOver && (
-                    <div className="border-2 border-dashed border-slate-200 rounded-xl h-24 flex items-center justify-center text-slate-400 text-xs italic">
-                      Empty column
+                  
+                  {isOver && (
+                    <div className="border-2 border-dashed border-indigo-300 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl h-32 animate-pulse flex items-center justify-center text-indigo-400 text-xs font-black uppercase tracking-widest">
+                      Drop Here
                     </div>
                   )}
               </div>
@@ -231,257 +274,111 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-4rem)] flex flex-col">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 h-[calc(100vh-4rem)] flex flex-col overflow-hidden animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 shrink-0 gap-4">
-        <div><h1 className="text-2xl font-black text-slate-900 italic tracking-tight uppercase">Applicants Hub</h1><p className="text-slate-500 text-sm">Managing Luxembourg's top sales talent.</p></div>
-        <div className="flex items-center gap-2 bg-white border border-slate-200 p-1 rounded-xl shadow-sm self-start md:self-auto">
-             <button onClick={() => setViewMode('PIPELINE_BOARD')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase ${viewMode === 'PIPELINE_BOARD' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}><LayoutGrid className="w-3 h-3" /> Board</button>
-             <button onClick={() => setViewMode('PIPELINE_LIST')} className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-xs font-bold uppercase ${viewMode === 'PIPELINE_LIST' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}><ListIcon className="w-3 h-3" /> List</button>
-             <div className="w-px h-4 bg-slate-200 mx-1"></div>
-             <button onClick={() => setViewMode('METRICS')} className={`p-2 rounded-lg transition-all ${viewMode === 'METRICS' ? 'bg-slate-900 text-white shadow' : 'text-slate-500 hover:text-slate-700'}`}><BarChart3 className="w-4 h-4" /></button>
+        <div><h1 className="text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase leading-none">{t.dashboard.title}</h1><p className="text-slate-500 text-xs mt-1 font-bold uppercase tracking-widest">{t.dashboard.subtitle}</p></div>
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-1 rounded-2xl shadow-sm self-start md:self-auto">
+             <button onClick={() => setViewMode('PIPELINE_BOARD')} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest ${viewMode === 'PIPELINE_BOARD' ? 'bg-slate-900 dark:bg-indigo-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}><LayoutGrid className="w-4 h-4" /> {t.dashboard.board}</button>
+             <button onClick={() => setViewMode('PIPELINE_LIST')} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all text-[10px] font-black uppercase tracking-widest ${viewMode === 'PIPELINE_LIST' ? 'bg-slate-900 dark:bg-indigo-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`}><ListIcon className="w-4 h-4" /> {t.dashboard.list}</button>
         </div>
       </div>
 
       {(viewMode === 'PIPELINE_LIST' || viewMode === 'PIPELINE_BOARD') && (
          <div className="flex flex-col sm:flex-row justify-between items-center mb-6 shrink-0 gap-4">
-            <div className="w-full sm:max-w-xs relative rounded-xl shadow-sm">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><Search className="h-4 w-4 text-slate-400" /></div>
-                <input type="text" className="block w-full rounded-xl border-slate-300 pl-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2.5 border bg-white" placeholder="Search talent..." value={filter} onChange={(e) => setFilter(e.target.value)} />
+            <div className="w-full sm:max-w-xs relative rounded-2xl shadow-sm">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4"><Search className="h-4 w-4 text-slate-400" /></div>
+                <input type="text" className="block w-full rounded-2xl border-2 border-slate-100 dark:border-slate-800 pl-11 focus:border-indigo-500 focus:ring-0 sm:text-sm py-3 border bg-white dark:bg-slate-900 dark:text-white transition-all font-medium" placeholder={t.dashboard.search} value={filter} onChange={(e) => setFilter(e.target.value)} />
             </div>
-            {selectedLeads.size > 0 && (
-                <div className="flex items-center gap-2 bg-indigo-50 px-3 py-2 rounded-xl border border-indigo-100 animate-fade-in shadow-sm">
-                    <span className="text-xs font-bold text-indigo-700">{selectedLeads.size} Selected</span>
-                    <button onClick={handleBatchDelete} className="p-1.5 hover:bg-white rounded-lg text-indigo-600 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                    <div className="h-4 w-px bg-indigo-200"></div>
-                    <select onChange={(e) => handleBatchStatus(e.target.value as LeadStatus)} className="text-xs border-none bg-transparent text-indigo-700 font-black uppercase focus:ring-0 cursor-pointer p-0 pr-4" defaultValue=""><option value="" disabled>Move...</option><option value="Lead">Lead</option><option value="Interviewing">Interviewing</option><option value="Formation">Formation</option><option value="Recruiter">Recruiter</option></select>
-                </div>
-            )}
-            <button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto ml-auto inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-bold uppercase rounded-xl shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98]"><Plus className="h-4 w-4 mr-2" /> New Applicant</button>
+            <button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto ml-auto inline-flex items-center justify-center px-8 py-3.5 border border-transparent text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl text-white bg-indigo-600 hover:bg-indigo-700 transition-all hover:scale-[1.03] active:scale-95"><Plus className="h-5 w-5 mr-2" /> {t.dashboard.register}</button>
          </div>
       )}
 
       {viewMode === 'PIPELINE_BOARD' && (
-          <div className="flex-1 overflow-x-auto overflow-y-hidden pb-4 custom-scrollbar">
-            <div className="flex h-full gap-5 min-w-[1500px]">
-              <KanbanColumn status="Lead" title="Incoming" icon={Briefcase} />
-              <KanbanColumn status="Interviewing" title="Interviewing" icon={UserCheck} />
-              <KanbanColumn status="Formation" title="Formation" icon={GraduationCap} />
-              <KanbanColumn status="Recruiter" title="Recruiters" icon={Users} />
-              <KanbanColumn status="Rejected" title="Rejected" icon={XCircle} />
+          <div className="flex-1 overflow-x-auto overflow-y-hidden pb-6 custom-scrollbar">
+            <div className="flex h-full gap-6 min-w-[1600px] px-1 py-1">
+              <KanbanColumn status="Lead" title={t.dashboard.stages.lead} icon={Briefcase} />
+              <KanbanColumn status="Interviewing" title={t.dashboard.stages.interviewing} icon={UserCheck} />
+              <KanbanColumn status="Formation" title={t.dashboard.stages.formation} icon={GraduationCap} />
+              <KanbanColumn status="Recruiter" title={t.dashboard.stages.recruiter} icon={Users} />
+              <KanbanColumn status="Rejected" title={t.dashboard.stages.rejected} icon={XCircle} />
             </div>
           </div>
       )}
 
-      {viewMode === 'PIPELINE_LIST' && (
-          <div className="flex-1 overflow-auto bg-white shadow-xl rounded-2xl border border-slate-200 custom-scrollbar">
-             <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50 sticky top-0 z-10">
-                  <tr>
-                    <th className="px-4 py-4 text-left"><input type="checkbox" className="rounded-lg border-slate-300 text-indigo-600" onChange={(e) => setSelectedLeads(e.target.checked ? new Set(filteredLeads.map(l => l.id)) : new Set())} checked={filteredLeads.length > 0 && selectedLeads.size === filteredLeads.length} /></th>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Applicant</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Stage</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Priority</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">CV</th>
-                    <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Applied On</th>
-                    <th className="relative px-6 py-4"><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-slate-100">
-                   {filteredLeads.map(lead => (
-                       <tr key={lead.id} className="hover:bg-indigo-50/30 transition-colors group">
-                           <td className="px-4 py-4 whitespace-nowrap"><input type="checkbox" className="rounded-lg border-slate-300 text-indigo-600" checked={selectedLeads.has(lead.id)} onChange={(e) => { const newSet = new Set(selectedLeads); if (e.target.checked) newSet.add(lead.id); else newSet.delete(lead.id); setSelectedLeads(newSet); }} /></td>
-                           <td className="px-6 py-4 whitespace-nowrap cursor-pointer" onClick={() => { setEditingLead(lead); setIsEditModalOpen(true); }}><div className="flex items-center"><div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-xs mr-4 shadow-sm">{lead.fullName.charAt(0)}</div><div><div className="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{lead.fullName}</div><div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{lead.postAppliedFor}</div></div></div></td>
-                           <td className="px-6 py-4 whitespace-nowrap"><select value={lead.status} onChange={(e) => handleStatusChange(lead.id, e.target.value as LeadStatus)} className="text-[10px] font-bold uppercase tracking-widest rounded-lg border-0 py-1.5 bg-slate-100 text-slate-800 focus:ring-2 focus:ring-indigo-500 cursor-pointer"><option value="Lead">Lead</option><option value="Interviewing">Interview</option><option value="Formation">Formation</option><option value="Recruiter">Recruiter</option><option value="Rejected">Rejected</option></select></td>
-                           <td className="px-6 py-4 whitespace-nowrap"><PriorityBadge priority={lead.priority} /></td>
-                           <td className="px-6 py-4 whitespace-nowrap">{lead.cvBase64 ? <button onClick={(e) => { e.stopPropagation(); viewCV(lead); }} className="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-600 hover:text-white transition-all"><FileText className="w-4 h-4" /></button> : <span className="text-slate-300 text-xs">-</span>}</td>
-                           <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-500">{new Date(lead.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</td>
-                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onClick={() => { setEditingLead(lead); setIsEditModalOpen(true); }} className="text-indigo-600 hover:text-indigo-900 font-bold uppercase text-[10px] tracking-widest">Details</button></td>
-                       </tr>
-                   ))}
-                </tbody>
-             </table>
-          </div>
-      )}
-
-      {viewMode === 'METRICS' && (
-          <div className="flex-1 overflow-auto p-1 animate-fade-in"><div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8"><div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group"><div className="absolute top-0 right-0 h-1 w-full bg-slate-900"></div><h3 className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Total Applicants</h3><p className="text-4xl font-black text-slate-900 mt-2 tracking-tighter">{leads.length}</p><div className="mt-4 flex items-center text-xs font-bold text-emerald-600"><TrendingUp className="w-3 h-3 mr-1" /> +4 this week</div></div><div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group"><div className="absolute top-0 right-0 h-1 w-full bg-emerald-500"></div><h3 className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Conversion Rate</h3><p className="text-4xl font-black text-emerald-600 mt-2 tracking-tighter">{leads.length ? Math.round((leads.filter(l => l.status === 'Recruiter').length / leads.length) * 100) : 0}%</p><div className="mt-4 flex items-center text-xs font-bold text-slate-400">Target: 15%</div></div><div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 relative overflow-hidden group"><div className="absolute top-0 right-0 h-1 w-full bg-indigo-500"></div><h3 className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Avg. Talent Score</h3><p className="text-4xl font-black text-indigo-600 mt-2 tracking-tighter">{leads.length ? Math.round(leads.reduce((acc: number, curr) => acc + curr.score, 0) / leads.length) : 0}</p><div className="mt-4 flex items-center text-xs font-bold text-indigo-400">High Quality Pool</div></div></div></div>
-      )}
-
       {isEditModalOpen && editingLead && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
-              <div className="bg-white rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col scale-in">
-                  <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <div className="flex items-center gap-4">
-                      <div className="h-14 w-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white text-2xl font-black italic">{editingLead.fullName.charAt(0)}</div>
+              <div className="bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col scale-in border-2 border-white/20">
+                  <div className="p-10 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                    <div className="flex items-center gap-6">
+                      <div className="h-20 w-20 rounded-3xl bg-slate-900 dark:bg-slate-700 flex items-center justify-center text-white text-3xl font-black italic shadow-2xl transform -rotate-3">{editingLead.fullName.charAt(0)}</div>
                       <div>
-                        <h2 className="text-2xl font-black text-slate-900 italic tracking-tight uppercase leading-none">{editingLead.fullName}</h2>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Candidate Profile #{editingLead.id.slice(-4)}</p>
+                        <h2 className="text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase leading-none">{editingLead.fullName}</h2>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-3">ID: #{editingLead.id.slice(-6).toUpperCase()}</p>
                       </div>
                     </div>
-                    <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors shadow-sm"><X className="w-6 h-6 text-slate-400" /></button>
+                    <button onClick={() => setIsEditModalOpen(false)} className="p-3 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm border border-slate-100 dark:border-slate-700 group"><X className="w-6 h-6 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-all" /></button>
                   </div>
                   
-                  <div className="p-8 overflow-y-auto space-y-10 custom-scrollbar">
-                      {/* Header Overview */}
-                      <div className="flex gap-6 p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 items-center justify-between">
-                          <div className="flex gap-8 items-center">
+                  <div className="p-10 overflow-y-auto space-y-12 custom-scrollbar dark:bg-slate-900">
+                      {editingLead.aiSummary && (
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 border-2 border-indigo-100 dark:border-indigo-800 rounded-[32px] p-8 shadow-inner relative overflow-hidden">
+                           <div className="absolute top-2 right-4 flex items-center gap-1.5 opacity-50">
+                              <BrainCircuit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                              <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Gemini AI Insights</span>
+                           </div>
+                           <div className="flex flex-col md:flex-row gap-8 items-start">
+                              <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center min-w-[120px] border border-indigo-50 dark:border-indigo-900/50">
+                                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">AI Suitability</span>
+                                 <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400 italic leading-none">{editingLead.aiScore}%</span>
+                              </div>
+                              <div className="flex-1">
+                                 <h4 className="text-xs font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                   <Sparkles className="w-4 h-4 text-indigo-400" /> {t.dashboard.profile.insights}
+                                 </h4>
+                                 <p className="text-sm font-medium text-indigo-800 dark:text-indigo-200 leading-relaxed italic">"{editingLead.aiSummary}"</p>
+                              </div>
+                           </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col md:flex-row gap-6 p-8 bg-indigo-900 dark:bg-indigo-950 rounded-[32px] items-center justify-between text-white shadow-xl relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                          <div className="flex gap-10 items-center relative z-10">
                             <div className="text-center group">
-                              <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Talent Score</span>
-                              <span className="text-3xl font-black text-indigo-600 tracking-tighter group-hover:scale-110 transition-transform block">{editingLead.score}</span>
+                              <span className="block text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2">{t.dashboard.profile.score}</span>
+                              <span className="text-5xl font-black text-white tracking-tighter transition-transform block italic">{Math.round(editingLead.score)}</span>
                             </div>
-                            <div className="h-12 w-px bg-indigo-200"></div>
+                            <div className="h-16 w-px bg-white/10"></div>
                             <div className="text-center">
-                              <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Internal Stage</span>
+                              <span className="block text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-2">{t.dashboard.profile.quality}</span>
                               <div className="mt-1"><PriorityBadge priority={editingLead.priority} /></div>
                             </div>
                           </div>
-                          <div className="flex gap-3">
-                             {editingLead.cvBase64 && (
-                                <button onClick={() => viewCV(editingLead)} className="flex items-center gap-2 px-5 py-3 bg-white text-indigo-600 rounded-2xl hover:bg-indigo-600 hover:text-white transition-all border border-indigo-200 text-xs font-black uppercase shadow-sm group">
-                                  <FileText className="w-4 h-4 group-hover:scale-110" /> View CV Document
-                                </button>
-                             )}
-                          </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                        {/* Contact Information Section */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center mb-6"><Phone className="w-4 h-4 mr-2 text-indigo-600" /> Contact Details</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div className="space-y-6">
+                            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center mb-8 border-l-4 border-indigo-600 pl-4">{t.dashboard.profile.channels}</h3>
                             <div className="space-y-4">
-                                <div className="group relative bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 transition-colors">
-                                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Email Address</span>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-bold text-slate-800 break-all">{editingLead.email}</span>
-                                        <div className="flex gap-1">
-                                            <button onClick={() => copyToClipboard(editingLead.email)} className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-indigo-600"><Copy className="w-3.5 h-3.5" /></button>
-                                            <a href={`mailto:${editingLead.email}`} className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-indigo-600"><ExternalLink className="w-3.5 h-3.5" /></a>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="group relative bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-colors">
-                                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-tight mb-1">Phone Number</span>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-sm font-bold text-slate-800">{editingLead.phone}</span>
-                                        <div className="flex gap-1">
-                                            <button onClick={() => copyToClipboard(editingLead.phone)} className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-emerald-600"><Copy className="w-3.5 h-3.5" /></button>
-                                            <a href={`tel:${editingLead.phone}`} className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-emerald-600"><Phone className="w-3.5 h-3.5" /></a>
-                                        </div>
+                                <div className="group relative bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border-2 border-slate-100 dark:border-slate-800 hover:border-indigo-200 transition-all">
+                                    <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email</span>
+                                    <div className="flex items-center justify-between mt-2">
+                                        <span className="text-sm font-black text-slate-800 dark:text-slate-200 break-all">{editingLead.email}</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        {/* Outreach Hub Section */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center mb-6"><Send className="w-4 h-4 mr-2 text-indigo-600" /> Quick Actions</h3>
-                            <div className="space-y-4">
-                                <button onClick={() => sendPersonalizedEmail(editingLead)} className="w-full flex items-center justify-between gap-2 p-4 bg-white border border-slate-200 rounded-2xl hover:border-indigo-500 hover:bg-indigo-50 transition-all shadow-sm group">
-                                    <div className="flex items-center gap-3">
-                                        <Mail className="w-5 h-5 text-indigo-600" />
-                                        <div className="text-left">
-                                            <span className="block text-xs font-bold text-slate-900">Email Invitation</span>
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold">Standard ProAgo Template</span>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600" />
-                                </button>
-                                <button onClick={() => sendPersonalizedSMS(editingLead)} className="w-full flex items-center justify-between gap-2 p-4 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500 hover:bg-emerald-50 transition-all shadow-sm group">
-                                    <div className="flex items-center gap-3">
-                                        <MessageSquare className="w-5 h-5 text-emerald-600" />
-                                        <div className="text-left">
-                                            <span className="block text-xs font-bold text-slate-900">SMS Outreach</span>
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold">Direct Mobile Message</span>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-emerald-600" />
-                                </button>
-                            </div>
-                        </div>
-                      </div>
-
-                      {/* Tasks Section */}
-                      <div>
-                          <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center mb-6"><CheckSquare className="w-4 h-4 mr-2 text-indigo-600" /> Recruitment Checklist</h3>
-                          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
-                              <ul className="divide-y divide-slate-100">
-                                  {editingLead.tasks?.map(task => (
-                                    <li key={task.id} className="p-4 flex items-center group hover:bg-slate-50 transition-colors">
-                                      <button onClick={() => toggleTask(task.id)} className={`mr-4 transition-colors ${task.isCompleted ? 'text-emerald-500' : 'text-slate-200 hover:text-slate-400'}`}>
-                                        {task.isCompleted ? <CheckCircle2 className="w-6 h-6"/> : <Square className="w-6 h-6"/>}
-                                      </button>
-                                      <span className={`flex-1 text-sm font-medium ${task.isCompleted ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.text}</span>
-                                      <button onClick={() => removeTask(task.id)} className="p-2 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-red-50 rounded-xl">
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </li>
-                                  ))}
-                                  <li className="p-4 bg-slate-50">
-                                    <div className="flex gap-3">
-                                      <input className="flex-1 text-sm border-slate-200 rounded-xl px-4 py-2 bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all" placeholder="Add a follow-up action..." value={newTaskText} onChange={(e) => setNewTaskText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addTask()} />
-                                      <button onClick={addTask} className="bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest px-6 py-2 rounded-xl hover:bg-indigo-700 transition-all shadow-sm">Add</button>
-                                    </div>
-                                  </li>
-                              </ul>
-                          </div>
-                      </div>
-
-                      {/* Core Management Fields */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-10 border-t border-slate-100">
-                           <div className="space-y-2">
-                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Current Status</label>
-                             <select value={editingLead.status} onChange={(e) => setEditingLead({...editingLead, status: e.target.value as LeadStatus})} className="w-full border-slate-200 rounded-2xl text-sm p-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                               <option value="Lead">Lead</option>
-                               <option value="Interviewing">Interviewing</option>
-                               <option value="Formation">Formation</option>
-                               <option value="Recruiter">Recruiter</option>
-                               <option value="Rejected">Rejected</option>
-                             </select>
-                           </div>
-                           <div className="space-y-2">
-                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority Rank</label>
-                             <select value={editingLead.priority} onChange={(e) => setEditingLead({...editingLead, priority: e.target.value as Priority})} className="w-full border-slate-200 rounded-2xl text-sm p-3 focus:ring-2 focus:ring-indigo-500 outline-none bg-white">
-                               <option>High</option>
-                               <option>Medium</option>
-                               <option>Low</option>
-                             </select>
-                           </div>
-                           <div className="md:col-span-2 space-y-2">
-                             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 text-indigo-600">Applicant Bio & Internal Notes</label>
-                             <textarea className="w-full border rounded-2xl border-slate-200 p-4 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white min-h-[120px]" rows={4} value={editingLead.bio} onChange={e => setEditingLead({...editingLead, bio: e.target.value})} />
-                           </div>
                       </div>
                   </div>
-                  <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-4 shrink-0">
-                    <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-6 py-3 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-slate-900 transition-colors">Close Profile</button>
-                    <button type="button" onClick={handleEditSubmit} className="px-10 py-3 text-xs font-black uppercase tracking-widest text-white bg-slate-900 rounded-2xl hover:bg-slate-800 shadow-lg hover:shadow-xl transition-all active:scale-95">Save Changes</button>
+                  <div className="p-10 border-t-2 border-slate-50 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 flex justify-end gap-6 shrink-0">
+                    <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors">{t.dashboard.profile.discard}</button>
+                    <button type="button" onClick={handleEditSubmit} className="px-12 py-4 text-[10px] font-black uppercase tracking-widest text-white bg-slate-900 dark:bg-indigo-600 rounded-[20px] hover:bg-slate-800 shadow-2xl transition-all italic">{t.dashboard.profile.finalize}</button>
                   </div>
               </div>
           </div>
-      )}
-      
-      {/* Simple Add Modal Fallback */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-fade-in">
-           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8 scale-in">
-              <h2 className="text-xl font-black italic uppercase tracking-tight mb-6">Register Manual Applicant</h2>
-              <div className="space-y-4">
-                  <p className="text-sm text-slate-500 italic">For manual entries, please use the public application form link for full profile tracking.</p>
-                  <button onClick={() => setIsAddModalOpen(false)} className="w-full py-4 bg-slate-100 rounded-2xl font-bold uppercase text-xs tracking-widest hover:bg-slate-200 transition-colors">Understood</button>
-              </div>
-           </div>
-        </div>
       )}
     </div>
   );
 };
-
-// Sub-component for check circles in Lucide
-const CheckCircle2 = ({ className }: { className: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-    <polyline points="22 4 12 14.01 9 11.01" />
-  </svg>
-);
 
 export default Dashboard;

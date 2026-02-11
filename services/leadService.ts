@@ -1,5 +1,6 @@
+
 import { supabase, isSupabaseConfigured } from './supabaseClient';
-import { Lead, LeadFormData, Priority } from '../types';
+import { Lead, LeadFormData, Priority, Task } from '../types';
 
 const calculateScore = (lead: Partial<Lead>): { score: number; priority: Priority } => {
   let score = 50; 
@@ -7,6 +8,12 @@ const calculateScore = (lead: Partial<Lead>): { score: number; priority: Priorit
   if (lead.source === 'Referral') score += 30;
   if (lead.postAppliedFor === 'Team Leader') score += 15;
   if (lead.postAppliedFor === 'Sales Manager') score += 10;
+  
+  // If AI score is provided, blend it with the heuristic score
+  if (lead.aiScore !== undefined) {
+    score = (score * 0.4) + (lead.aiScore * 0.6);
+  }
+
   score = Math.min(100, Math.max(0, score));
   let priority: Priority = 'Low';
   if (score >= 80) priority = 'High';
@@ -25,10 +32,13 @@ let MOCK_LEADS: Lead[] = [
     source: 'Moovijob',
     status: 'Interviewing',
     createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
     priority: 'High',
     score: 85,
     tasks: [{ id: 't1', text: 'Check reference letters', isCompleted: false, createdAt: new Date().toISOString() }],
-    nextFollowUp: new Date(Date.now() + 86400000).toISOString()
+    nextFollowUp: new Date(Date.now() + 86400000).toISOString(),
+    aiSummary: "Experienced sales professional with a strong track record in door-to-door environments. Highly suitable for team leadership due to longevity in field marketing.",
+    aiScore: 88
   },
   {
     id: '2',
@@ -40,9 +50,12 @@ let MOCK_LEADS: Lead[] = [
     source: 'LinkedIn',
     status: 'Lead',
     createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
+    updatedAt: new Date(Date.now() - 3600000 * 4).toISOString(),
     priority: 'Medium',
     score: 72,
-    tasks: [],
+    tasks: [] as Task[],
+    aiSummary: "Entry-level candidate with high academic achievement. Demonstrates potential for ambassador roles, though lacking direct sales experience.",
+    aiScore: 65
   }
 ];
 
@@ -65,7 +78,9 @@ export const submitLead = async (formData: LeadFormData): Promise<{ success: boo
           priority,
           tasks: [],
           cv_base64: formData.cvBase64,
-          cv_file_name: formData.cvFileName
+          cv_file_name: formData.cvFileName,
+          ai_summary: formData.aiSummary,
+          ai_score: formData.aiScore
         },
       ]);
 
@@ -73,8 +88,9 @@ export const submitLead = async (formData: LeadFormData): Promise<{ success: boo
     return { success: true };
   } else {
     await new Promise(resolve => setTimeout(resolve, 800));
+    const now = new Date().toISOString();
     MOCK_LEADS.unshift({
-        id: Math.random().toString(36).substr(2, 9),
+        id: Math.random().toString(36).substring(2, 11),
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -82,12 +98,15 @@ export const submitLead = async (formData: LeadFormData): Promise<{ success: boo
         bio: formData.bio,
         source: formData.source || 'Web Form',
         status: 'Lead',
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
         score,
         priority,
-        tasks: [],
+        tasks: [] as Task[],
         cvBase64: formData.cvBase64,
-        cvFileName: formData.cvFileName
+        cvFileName: formData.cvFileName,
+        aiSummary: formData.aiSummary,
+        aiScore: formData.aiScore
     });
     return { success: true };
   }
@@ -100,7 +119,9 @@ export const updateLead = async (id: string, updates: Partial<Lead>): Promise<{ 
     return { success: true };
   } else {
     await new Promise(resolve => setTimeout(resolve, 300));
-    MOCK_LEADS = MOCK_LEADS.map(lead => lead.id === id ? { ...lead, ...updates } : lead);
+    MOCK_LEADS = MOCK_LEADS.map(lead => 
+      lead.id === id ? { ...lead, ...updates, updatedAt: new Date().toISOString() } : lead
+    );
     return { success: true };
   }
 };
@@ -131,11 +152,14 @@ export const fetchLeads = async (): Promise<{ data: Lead[]; error?: string }> =>
       source: item.source,
       status: item.status,
       createdAt: item.created_at,
+      updatedAt: item.updated_at || item.created_at,
       priority: item.priority,
       score: item.score,
       tasks: item.tasks || [],
       cvBase64: item.cv_base64,
-      cvFileName: item.cv_file_name
+      cvFileName: item.cv_file_name,
+      aiSummary: item.ai_summary,
+      aiScore: item.ai_score
     })) as Lead[];
     return { data: mappedData || [] };
   } else {

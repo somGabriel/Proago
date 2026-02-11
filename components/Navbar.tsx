@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { ViewState, UserRole } from '../types';
-import { LayoutDashboard, UserPlus, LogIn, Briefcase, Award, TrendingUp } from 'lucide-react';
+import { ViewState, UserRole, Theme, Language } from '../types';
+import { LayoutDashboard, UserPlus, LogIn, Award, TrendingUp, Sun, Moon, Globe } from 'lucide-react';
+import { useTranslation } from '../services/translations';
 
 interface NavbarProps {
   currentView: ViewState;
@@ -9,22 +10,53 @@ interface NavbarProps {
   isAuthenticated: boolean;
   userRole: UserRole;
   onLogout: () => void;
+  theme: Theme;
+  onThemeToggle: () => void;
+  language: Language;
+  onLanguageChange: (lang: Language) => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthenticated, userRole, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({ 
+  currentView, onViewChange, isAuthenticated, userRole, onLogout, 
+  theme, onThemeToggle, language, onLanguageChange 
+}) => {
+  const t = useTranslation(language);
+
   return (
-    <nav className="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+    <nav className="bg-slate-900 dark:bg-slate-950 border-b border-slate-800 sticky top-0 z-50 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer" onClick={() => onViewChange(ViewState.FORM)}>
-              <div className="flex items-center gap-2">
-                 <span className="font-serif text-2xl font-bold text-white tracking-wide italic">PROAGO WORLD</span>
-              </div>
+              <span className="font-serif text-2xl font-bold text-white tracking-wide italic">PROAGO WORLD</span>
             </div>
           </div>
+          
           <div className="flex items-center space-x-2">
-            
+            {/* Language Selector */}
+            <div className="flex items-center bg-slate-800 rounded-lg p-0.5 mr-2">
+              {(['en', 'fr', 'de'] as Language[]).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => onLanguageChange(lang)}
+                  className={`px-2 py-1 text-[10px] font-black uppercase rounded-md transition-all ${
+                    language === lang ? 'bg-slate-600 text-white' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={onThemeToggle}
+              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors mr-2"
+              title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+            >
+              {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+            </button>
+
             {userRole !== 'WORKER' && userRole !== 'MANAGER' && (
                 <button
                 onClick={() => onViewChange(ViewState.FORM)}
@@ -35,7 +67,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthentica
                 }`}
                 >
                 <UserPlus className="h-4 w-4 mr-2" />
-                Apply
+                {t.nav.apply}
                 </button>
             )}
             
@@ -51,7 +83,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthentica
                         }`}
                     >
                         <LayoutDashboard className="h-4 w-4 mr-2" />
-                        Recruitment
+                        {t.nav.recruitment}
                     </button>
                 )}
 
@@ -65,7 +97,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthentica
                         }`}
                     >
                         <TrendingUp className="h-4 w-4 mr-2" />
-                        Manager Portal
+                        {t.nav.manager}
                     </button>
                 )}
                 
@@ -79,7 +111,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthentica
                         }`}
                     >
                         <Award className="h-4 w-4 mr-2" />
-                        My Performance
+                        {t.nav.performance}
                     </button>
                 )}
 
@@ -89,7 +121,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthentica
                     onClick={onLogout}
                     className="text-slate-400 hover:text-white text-xs font-medium px-2"
                 >
-                    Sign Out
+                    {t.nav.signOut}
                 </button>
                 </>
             ) : (
@@ -102,10 +134,9 @@ const Navbar: React.FC<NavbarProps> = ({ currentView, onViewChange, isAuthentica
                 }`}
               >
                 <LogIn className="h-4 w-4 mr-2" />
-                Login
+                {t.nav.login}
               </button>
             )}
-            
           </div>
         </div>
       </div>

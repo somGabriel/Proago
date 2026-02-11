@@ -1,76 +1,76 @@
 
 import React, { useState } from 'react';
 import { 
-  Award, Clock, DollarSign, TrendingUp, Calendar, MapPin, Shield, 
+  Award, Clock, DollarSign, TrendingUp, TrendingDown, Calendar, MapPin, Shield, 
   ChevronRight, X, BarChart3, Star, Zap, CheckCircle2, Box, Info,
-  Trophy, Target, ChevronUp, Flag, Users, Medal, LayoutDashboard
+  Trophy, Target, ChevronUp, Flag, Users, Medal, LayoutDashboard,
+  Briefcase, ArrowUpRight, History, ShoppingBag, Activity
 } from 'lucide-react';
+import { Language } from '../types';
+import { useTranslation } from '../services/translations';
 
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  unlocked: boolean;
-  icon: any;
+interface WorkerDashboardProps {
+  language: Language;
 }
 
-interface RankLevel {
-  id: string;
-  name: string;
-  targetAvg: number;
-  requirement?: string;
+interface DayData {
+  day: string;
+  fullDay: string;
+  score: number;
+  sales: number;
+  hours: number;
+  status: 'Excellent' | 'Good' | 'Average' | 'Low' | 'Rest';
   color: string;
-  bgColor: string;
+  feedback: string;
 }
 
-type WorkerTab = 'performance' | 'ranking' | 'shifts';
+const WorkerDashboard: React.FC<WorkerDashboardProps> = ({ language }) => {
+  const t = useTranslation(language);
+  const [activeTab, setActiveTab] = useState<'performance' | 'ranking' | 'shifts'>('performance');
+  const [activeModal, setActiveModal] = useState<'earnings' | 'achievements' | 'career' | null>(null);
+  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
 
-const WorkerDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<WorkerTab>('performance');
-  const [activeModal, setActiveModal] = useState<'earnings' | 'achievements' | 'history' | 'career' | null>(null);
-
-  // ProAgo Specific Rank Definitions
-  const rankLevels: RankLevel[] = [
-    { id: 'rookie', name: 'Rookie', targetAvg: 0, requirement: '8 sales in 5 workdays (Trial)', color: 'text-slate-600', bgColor: 'bg-slate-100' },
-    { id: 'promoter', name: 'Promoter', targetAvg: 1.6, color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
-    { id: 'pool_captain', name: 'Pool Captain', targetAvg: 2.6, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-    { id: 'team_captain', name: 'Team Captain', targetAvg: 3.6, color: 'text-purple-600', bgColor: 'bg-purple-100' },
-    { id: 'sales_manager', name: 'Sales Manager', targetAvg: 4.6, color: 'text-amber-600', bgColor: 'bg-amber-100' },
+  // Specific Pattern: Mon (Good), Tue (Bad), Wed/Thu (Good)
+  const weeklyData: DayData[] = [
+    { day: 'Mon', fullDay: 'Monday', score: 92, sales: 15, hours: 8.5, status: 'Excellent', color: 'bg-emerald-500 dark:bg-emerald-500', feedback: 'Outstanding start to the week. High conversion rate.' },
+    { day: 'Tue', fullDay: 'Tuesday', score: 35, sales: 3, hours: 8.0, status: 'Low', color: 'bg-rose-500 dark:bg-rose-500', feedback: 'Low energy detected. Sales pitch adherence was below 60%.' },
+    { day: 'Wed', fullDay: 'Wednesday', score: 88, sales: 12, hours: 7.5, status: 'Excellent', color: 'bg-emerald-500 dark:bg-emerald-500', feedback: 'Great recovery! Territory coverage was perfect.' },
+    { day: 'Thu', fullDay: 'Thursday', score: 95, sales: 18, hours: 9.0, status: 'Excellent', color: 'bg-emerald-600 dark:bg-emerald-400', feedback: 'Top performer of the day. Consistent energy levels.' },
+    { day: 'Fri', fullDay: 'Friday', score: 60, sales: 8, hours: 6.0, status: 'Average', color: 'bg-amber-400 dark:bg-amber-400', feedback: 'Solid effort, but left shift early.' },
+    { day: 'Sat', fullDay: 'Saturday', score: 75, sales: 10, hours: 5.0, status: 'Good', color: 'bg-emerald-400 dark:bg-emerald-600', feedback: 'Good weekend hustle.' },
+    { day: 'Sun', fullDay: 'Sunday', score: 0, sales: 0, hours: 0, status: 'Rest', color: 'bg-slate-200 dark:bg-slate-800', feedback: 'Rest Day.' },
   ];
 
-  // Mock User Data
-  const currentRankIndex = 1; // User is "Promoter"
-  const currentAvgSales = 2.1;
+  const stats = [
+    { label: t.worker.earnings, value: '€2,450.00', icon: DollarSign, color: 'text-emerald-600', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: t.worker.shifts, value: '18', icon: Calendar, color: 'text-indigo-600', bgColor: 'bg-indigo-50 dark:bg-indigo-900/20' },
+    { label: t.worker.avg, value: '2.4', icon: Target, color: 'text-purple-600', bgColor: 'bg-purple-50 dark:bg-purple-900/20' },
+    { label: t.worker.rank, value: 'Promoter', icon: Award, color: 'text-amber-600', bgColor: 'bg-amber-50 dark:bg-amber-900/20' },
+  ];
 
-  // Mock Ranking Data
+  const shifts = [
+    { id: 1, location: 'Cloche d\'Or, Luxembourg', date: '2024-11-15', time: '10:00 - 18:00', type: 'D2D Sales', status: 'Upcoming' },
+    { id: 2, location: 'Kirchberg Shopping', date: '2024-11-12', time: '09:00 - 17:00', type: 'Event Promotion', status: 'Completed' },
+    { id: 3, location: 'Esch-sur-Alzette Center', date: '2024-11-10', time: '11:00 - 19:00', type: 'Lead Gen', status: 'Completed' },
+  ];
+
   const leaderboard = [
-    { id: '1', name: 'Jean-Pierre M.', sales: 154, avg: 5.2, rank: 'Sales Manager', avatar: 'JP' },
-    { id: '2', name: 'Sarah W.', sales: 132, avg: 4.1, rank: 'Team Captain', avatar: 'SW' },
-    { id: '3', name: 'Marco V.', sales: 121, avg: 3.8, rank: 'Team Captain', avatar: 'MV' },
-    { id: '4', name: 'Worker 111 (You)', sales: 42, avg: 2.1, rank: 'Promoter', avatar: 'W' },
-    { id: '5', name: 'Lucinda K.', sales: 38, avg: 1.9, rank: 'Promoter', avatar: 'LK' },
+    { rank: 1, name: 'Jean-Pierre M.', score: 98, avatar: 'JP' },
+    { rank: 2, name: 'Sarah W.', score: 94, avatar: 'SW' },
+    { rank: 3, name: 'You', score: 88, avatar: 'ME' },
+    { rank: 4, name: 'Marco V.', score: 85, avatar: 'MV' },
   ];
 
-  // Mock Shifts/Events Data
-  const upcomingEvents = [
-    { id: 'e1', title: 'Grand Opening - Zone A', date: '2025-10-30', time: '10:00 - 18:00', location: 'Cloche d\'Or', type: 'Sales Event', bonus: '€50 Milestone' },
-    { id: 'e2', title: 'Monthly Sales Training', date: '2025-11-02', time: '09:00 - 12:00', location: 'Office HQ', type: 'Workshop', bonus: 'Skill XP' },
-    { id: 'e3', title: 'Kirchberg Weekend Push', date: '2025-11-05', time: '11:00 - 20:00', location: 'Auchan Kirchberg', type: 'Shift', bonus: '1.5x Multiplier' },
-  ];
-
-  const currentRank = rankLevels[currentRankIndex];
-  const nextRank = rankLevels[currentRankIndex + 1];
-
-  const Modal = ({ title, onClose, children }: { title: string, onClose: () => void, children: React.ReactNode }) => (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
-        <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-          <h3 className="text-lg font-bold text-slate-900">{title}</h3>
-          <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors">
-            <X className="w-5 h-5 text-slate-500" />
+  const Modal = ({ title, onClose, children }: { title: string, onClose: () => void, children?: React.ReactNode }) => (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col border-2 border-white/20">
+        <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+          <h3 className="text-xl font-black text-slate-900 dark:text-white italic uppercase tracking-tighter">{title}</h3>
+          <button onClick={onClose} className="p-3 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all shadow-sm group">
+            <X className="w-6 h-6 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-all group-hover:rotate-90" />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto">
+        <div className="p-8 overflow-y-auto custom-scrollbar">
           {children}
         </div>
       </div>
@@ -78,304 +78,214 @@ const WorkerDashboard: React.FC = () => {
   );
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative">
-      {/* Header with Prominent Tab Switcher */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
       <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
         <div>
-          <h1 className="text-2xl font-black text-slate-900 italic tracking-tighter uppercase leading-none">Promoter Dashboard</h1>
-          <p className="text-slate-500 text-sm mt-1">Worker #111 • ProAgo World Recruitment</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white italic tracking-tighter uppercase leading-none">{t.worker.title}</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Worker #111 • ProAgo World</p>
         </div>
         
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl gap-1">
-            <button 
-                onClick={() => setActiveTab('performance')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'performance' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-                <LayoutDashboard className="w-4 h-4" /> Performance
+        <div className="flex bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl gap-1">
+            <button onClick={() => setActiveTab('performance')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'performance' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+                <LayoutDashboard className="w-4 h-4" /> {t.worker.performance}
             </button>
-            <button 
-                onClick={() => setActiveTab('ranking')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ranking' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-                <Medal className="w-4 h-4" /> Ranking
+            <button onClick={() => setActiveTab('ranking')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ranking' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+                <Medal className="w-4 h-4" /> {t.worker.ranking}
             </button>
-            <button 
-                onClick={() => setActiveTab('shifts')}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'shifts' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-                <Calendar className="w-4 h-4" /> Shifts
+            <button onClick={() => setActiveTab('shifts')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'shifts' ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}>
+                <Briefcase className="w-4 h-4" /> {t.worker.shifts}
             </button>
         </div>
       </div>
 
-      {activeTab === 'performance' && (
-        <div className="animate-fade-in space-y-8">
-            <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                <div 
-                    onClick={() => setActiveModal('career')}
-                    className="cursor-pointer group relative flex items-center gap-4 bg-white border border-slate-200 p-2 pr-6 rounded-2xl shadow-sm hover:shadow-md transition-all hover:border-indigo-300 w-full md:w-auto"
-                >
-                    <div className={`h-14 w-14 rounded-xl ${currentRank.bgColor} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
-                        <Trophy className={`h-8 w-8 ${currentRank.color}`} />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Current Rank</span>
-                        <span className={`text-xl font-black ${currentRank.color} uppercase italic tracking-tight`}>
-                        {currentRank.name}
-                        </span>
-                        <div className="flex items-center gap-2 mt-1">
-                        <div className="h-1.5 w-24 bg-slate-100 rounded-full overflow-hidden">
-                            <div className={`h-full ${currentRank.id === 'promoter' ? 'bg-emerald-500' : 'bg-indigo-500'}`} style={{ width: '65%' }}></div>
-                        </div>
-                        <span className="text-[10px] font-bold text-slate-500 uppercase">Next: {nextRank.name}</span>
-                        </div>
-                    </div>
-                    <div className="absolute top-2 right-2">
-                        <ChevronUp className="w-4 h-4 text-slate-300 group-hover:text-slate-500 rotate-90" />
-                    </div>
-                </div>
-            </div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        {stats.map((stat, idx) => (
+          <div key={idx} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 hover:shadow-lg transition-all group">
+             <div className="flex items-center gap-4">
+               <div className={`p-3 rounded-xl ${stat.bgColor} ${stat.color} group-hover:scale-110 transition-transform`}>
+                 <stat.icon className="w-6 h-6" />
+               </div>
+               <div>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                 <p className="text-2xl font-black text-slate-900 dark:text-white mt-1">{stat.value}</p>
+               </div>
+             </div>
+          </div>
+        ))}
+      </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div onClick={() => setActiveModal('earnings')} className="bg-white p-5 rounded-2xl border border-slate-200 cursor-pointer hover:shadow-lg transition-all">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600"><DollarSign className="w-6 h-6" /></div>
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase">Earnings</p>
-                            <p className="text-2xl font-black">€2,450.00</p>
+      {activeTab === 'performance' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" /> Weekly Trends
+                </h3>
+                <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">Tap bars for details</span>
+              </div>
+              
+              <div className="h-64 flex items-end justify-between gap-3 sm:gap-6">
+                 {weeklyData.map((data, i) => (
+                   <div 
+                      key={i} 
+                      onClick={() => setSelectedDay(data)}
+                      className="flex-1 bg-slate-50 dark:bg-slate-800/50 rounded-2xl relative group overflow-hidden cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300" 
+                      style={{ height: '100%' }}
+                   >
+                     {/* Hover Tooltip/Label */}
+                     <div className="absolute inset-0 flex items-end justify-center pb-2 opacity-0 group-hover:opacity-100 z-10 transition-opacity">
+                        <span className="text-[10px] font-black text-slate-900 dark:text-white bg-white/90 dark:bg-black/50 px-1.5 rounded backdrop-blur-sm">{data.score}%</span>
+                     </div>
+                     
+                     <div className="absolute bottom-0 left-0 right-0 flex items-end">
+                        <div 
+                          className={`w-full mx-auto rounded-2xl transition-all duration-1000 ease-out relative ${data.color} ${data.score === 0 ? 'h-2 bg-slate-200 dark:bg-slate-800' : ''}`} 
+                          style={{ height: data.score === 0 ? '8px' : `${data.score}%` }}
+                        >
                         </div>
-                    </div>
-                </div>
-                <div onClick={() => setActiveModal('career')} className="bg-white p-5 rounded-2xl border border-slate-200 cursor-pointer hover:shadow-lg transition-all">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-indigo-50 p-3 rounded-xl text-indigo-600"><Target className="w-6 h-6" /></div>
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase">Daily Avg</p>
-                            <p className="text-2xl font-black">{currentAvgSales} <span className="text-xs font-bold text-slate-300">/ {nextRank.targetAvg}</span></p>
-                        </div>
-                    </div>
-                </div>
-                <div onClick={() => setActiveModal('achievements')} className="bg-white p-5 rounded-2xl border border-slate-200 cursor-pointer hover:shadow-lg transition-all">
-                    <div className="flex items-center gap-4">
-                        <div className="bg-purple-50 p-3 rounded-xl text-purple-600"><Award className="w-6 h-6" /></div>
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase">Badges</p>
-                            <p className="text-2xl font-black">Level 4</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            {/* Recent activity and stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                        <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Recent History</h3>
-                        <BarChart3 className="w-4 h-4 text-slate-300" />
-                    </div>
-                    <ul className="divide-y divide-slate-50">
-                        {[1, 2, 3].map(i => (
-                            <li key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400"><MapPin className="w-5 h-5" /></div>
-                                    <div><p className="text-sm font-bold text-slate-900">Kirchberg Area {i}</p><p className="text-[10px] text-slate-400">Oct {20-i}, 2025</p></div>
-                                </div>
-                                <p className="text-sm font-black text-emerald-600">+€160.00</p>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-6">
-                    <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Reach Distribution</h3>
-                    <div className="space-y-4">
-                        {['Box 1', 'Box 2', 'Box 3', 'Box 4'].map((box, i) => (
-                            <div key={box} className="space-y-2">
-                                <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase"><span>{box}</span><span>{100 - (i*15)}%</span></div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indigo-500" style={{ width: `${100 - (i*15)}%` }}></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
+                     </div>
+                   </div>
+                 ))}
+              </div>
+              <div className="flex justify-between mt-4 text-[10px] font-black uppercase text-slate-400 tracking-widest px-1">
+                {weeklyData.map(d => <span key={d.day}>{d.day}</span>)}
+              </div>
+           </div>
+           
+           <div className="bg-indigo-900 dark:bg-indigo-950 rounded-[32px] p-8 text-white relative overflow-hidden flex flex-col justify-between shadow-xl">
+             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10"></div>
+             <div>
+               <div className="inline-flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
+                 <Zap className="w-3 h-3 text-yellow-400" /> Current Streak
+               </div>
+               <h3 className="text-3xl font-black italic tracking-tighter uppercase">5 Days Active</h3>
+               <p className="text-indigo-200 text-xs mt-2 font-medium">Keep it up to earn the "Consistent" badge!</p>
+             </div>
+             <button onClick={() => setActiveModal('achievements')} className="w-full py-4 bg-white text-indigo-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-50 transition-colors mt-8">View Achievements</button>
+           </div>
         </div>
       )}
 
       {activeTab === 'ranking' && (
-        <div className="animate-fade-in max-w-4xl mx-auto">
-            <div className="bg-slate-900 rounded-3xl p-8 text-white mb-8 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
-                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                    <div className="h-24 w-24 rounded-3xl bg-indigo-500 flex items-center justify-center shrink-0 shadow-2xl">
-                        <Medal className="w-12 h-12 text-white" />
-                    </div>
-                    <div className="text-center md:text-left">
-                        <h2 className="text-3xl font-black italic uppercase tracking-tighter">Luxembourg Top 50</h2>
-                        <p className="text-indigo-300 font-bold text-sm">Monthly Leaderboard - October 2025</p>
-                        <div className="mt-4 flex flex-wrap justify-center md:justify-start gap-4">
-                            <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10">
-                                <p className="text-[10px] uppercase font-bold text-slate-400">Your Pos</p>
-                                <p className="text-lg font-black text-white">#14 <span className="text-xs text-emerald-400">↑2</span></p>
-                            </div>
-                            <div className="bg-white/10 px-4 py-2 rounded-xl border border-white/10">
-                                <p className="text-[10px] uppercase font-bold text-slate-400">To Top 10</p>
-                                <p className="text-lg font-black text-white">+12 Sales</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                <table className="min-w-full divide-y divide-slate-100">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">Pos</th>
-                            <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Worker</th>
-                            <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Total Sales</th>
-                            <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">Avg / Day</th>
-                            <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {leaderboard.map((item, i) => (
-                            <tr key={item.id} className={`hover:bg-indigo-50/30 transition-colors ${item.id === '4' ? 'bg-indigo-50/50' : ''}`}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-black">
-                                        {i === 0 ? <span className="text-amber-500 text-lg">🥇</span> : i === 1 ? <span className="text-slate-400 text-lg">🥈</span> : i === 2 ? <span className="text-amber-700 text-lg">🥉</span> : `#${i+1}`}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center text-white font-black text-xs">{item.avatar}</div>
-                                        <div>
-                                            <p className="text-sm font-bold text-slate-900">{item.name}</p>
-                                            <p className="text-[10px] font-bold text-slate-400 uppercase">{item.rank}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-center whitespace-nowrap text-sm font-black text-slate-900">{item.sales}</td>
-                                <td className="px-6 py-4 text-center whitespace-nowrap text-sm font-black text-indigo-600">{item.avg}</td>
-                                <td className="px-6 py-4 text-right whitespace-nowrap">
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 uppercase tracking-tighter">Active</span>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+           <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+             <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-widest italic">{t.worker.leaderboard}</h3>
+           </div>
+           <div className="divide-y divide-slate-100 dark:divide-slate-800">
+             {leaderboard.map((user) => (
+               <div key={user.rank} className={`p-6 flex items-center justify-between ${user.name === 'You' ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'} transition-colors`}>
+                 <div className="flex items-center gap-6">
+                   <div className={`w-10 h-10 flex items-center justify-center rounded-xl font-black text-lg shadow-sm ${
+                     user.rank === 1 ? 'bg-yellow-100 text-yellow-700' :
+                     user.rank === 2 ? 'bg-slate-200 text-slate-700' :
+                     user.rank === 3 ? 'bg-orange-100 text-orange-700' :
+                     'bg-slate-100 text-slate-500'
+                   }`}>
+                     {user.rank}
+                   </div>
+                   <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500 dark:text-slate-400 text-xs">
+                       {user.avatar}
+                     </div>
+                     <span className={`font-bold ${user.name === 'You' ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}`}>{user.name}</span>
+                   </div>
+                 </div>
+                 <div className="text-right">
+                   <span className="block text-2xl font-black text-slate-900 dark:text-white italic tracking-tighter">{user.score}</span>
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</span>
+                 </div>
+               </div>
+             ))}
+           </div>
         </div>
       )}
 
       {activeTab === 'shifts' && (
-        <div className="animate-fade-in space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {upcomingEvents.map(event => (
-                    <div key={event.id} className="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col hover:border-indigo-300 transition-all shadow-sm group">
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="bg-indigo-50 p-3 rounded-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                                <Calendar className="w-6 h-6" />
-                            </div>
-                            <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">{event.bonus}</span>
-                        </div>
-                        <h3 className="text-lg font-black text-slate-900 uppercase italic tracking-tighter mb-2">{event.title}</h3>
-                        <div className="space-y-3 mt-auto">
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                                <Clock className="w-4 h-4" /> {new Date(event.date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })} • {event.time}
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
-                                <MapPin className="w-4 h-4" /> {event.location}
-                            </div>
-                        </div>
-                        <button className="mt-8 w-full py-3 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95">Confirm Presence</button>
-                    </div>
-                ))}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {shifts.map(shift => (
+            <div key={shift.id} className="bg-white dark:bg-slate-900 rounded-[24px] p-6 border border-slate-200 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all group shadow-sm">
+               <div className="flex justify-between items-start mb-4">
+                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                   shift.status === 'Upcoming' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                 }`}>
+                   {shift.status}
+                 </span>
+                 <Briefcase className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+               </div>
+               <h4 className="text-lg font-black text-slate-900 dark:text-white mb-1">{shift.location}</h4>
+               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-6">{shift.type}</p>
+               
+               <div className="space-y-3">
+                 <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                   <Calendar className="w-4 h-4" /> {shift.date}
+                 </div>
+                 <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                   <Clock className="w-4 h-4" /> {shift.time}
+                 </div>
+               </div>
             </div>
-
-            <div className="bg-slate-50 rounded-3xl p-8 border border-slate-100 text-center">
-                <Info className="w-8 h-8 text-slate-400 mx-auto mb-4" />
-                <h4 className="text-sm font-bold text-slate-900 uppercase">Looking for more shifts?</h4>
-                <p className="text-xs text-slate-500 mt-2">Contact your Pool Captain or Team Captain to request additional zones for the next week.</p>
-            </div>
+          ))}
+          <div className="bg-slate-50 dark:bg-slate-800/50 rounded-[24px] border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center p-6 text-slate-400 hover:border-indigo-300 hover:text-indigo-500 transition-all cursor-pointer group min-h-[250px]">
+             <History className="w-8 h-8 mb-3 group-hover:scale-110 transition-transform" />
+             <span className="text-xs font-black uppercase tracking-widest">View Past Shifts</span>
+          </div>
         </div>
       )}
 
-      {/* Career Modal (shared) */}
-      {activeModal === 'career' && (
-        <Modal title="ProAgo Career Progression" onClose={() => setActiveModal(null)}>
-           <div className="space-y-8">
-              <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 text-white">
-                 <div className="flex justify-between items-start mb-6">
-                    <div>
-                       <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">Current Status</p>
-                       <h4 className="text-3xl font-black italic uppercase tracking-tight">{currentRank.name}</h4>
-                    </div>
-                    <div className="h-12 w-12 rounded-xl bg-white/10 flex items-center justify-center">
-                       <Trophy className="w-6 h-6 text-white" />
-                    </div>
-                 </div>
-                 
-                 <div className="space-y-4">
-                    <div className="flex justify-between items-end text-xs mb-1">
-                       <span className="font-bold text-indigo-200">Progress to {nextRank.name}</span>
-                       <span className="font-mono text-indigo-100">{currentAvgSales} / {nextRank.targetAvg} avg</span>
-                    </div>
-                    <div className="w-full bg-white/10 rounded-full h-3 overflow-hidden border border-white/5">
-                       <div 
-                         className="bg-indigo-400 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(129,140,248,0.5)]" 
-                         style={{ width: `${Math.min(100, (currentAvgSales / nextRank.targetAvg) * 100)}%` }}
-                       ></div>
-                    </div>
-                 </div>
-              </div>
-
-              <div className="relative pt-4 pb-4">
-                <div className="absolute left-[27px] top-0 bottom-0 w-0.5 bg-slate-100"></div>
-                <div className="space-y-10">
-                  {rankLevels.map((rank, index) => {
-                    const isUnlocked = index <= currentRankIndex;
-                    const isCurrent = index === currentRankIndex;
-                    const Icon = index === 0 ? Flag : index === rankLevels.length - 1 ? Trophy : Award;
-                    
-                    return (
-                      <div key={rank.id} className={`relative flex items-center gap-6 ${!isUnlocked ? 'opacity-40' : ''}`}>
-                         <div className={`z-10 h-14 w-14 rounded-2xl flex items-center justify-center border-4 border-white shadow-md transition-all ${
-                            isUnlocked ? `${rank.bgColor} scale-100` : 'bg-slate-200 grayscale scale-90'
-                         } ${isCurrent ? 'ring-4 ring-indigo-100' : ''}`}>
-                            <Icon className={`w-6 h-6 ${isUnlocked ? rank.color : 'text-slate-400'}`} />
-                         </div>
-                         <div className="flex-1">
-                            <h5 className={`font-black uppercase italic tracking-tight ${isCurrent ? 'text-indigo-600' : 'text-slate-900'}`}>{rank.name}</h5>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase">Target: {rank.targetAvg} Avg/Day</p>
-                         </div>
-                      </div>
-                    );
-                  })}
+      {/* Day Detail Modal */}
+      {selectedDay && (
+        <Modal title={selectedDay.fullDay} onClose={() => setSelectedDay(null)}>
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className={`h-16 w-16 rounded-2xl flex items-center justify-center text-white shadow-lg ${selectedDay.color}`}>
+                   {selectedDay.status === 'Excellent' || selectedDay.status === 'Good' ? <TrendingUp className="w-8 h-8" /> : 
+                    selectedDay.status === 'Rest' ? <Clock className="w-8 h-8" /> : <TrendingDown className="w-8 h-8" />}
+                </div>
+                <div>
+                  <h4 className="text-2xl font-black text-slate-900 dark:text-white italic">{selectedDay.score}%</h4>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Efficiency Score</p>
                 </div>
               </div>
-           </div>
+              <div className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest ${
+                selectedDay.status === 'Low' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400' : 
+                selectedDay.status === 'Rest' ? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400' :
+                'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+              }`}>
+                {selectedDay.status}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+               <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center gap-2 mb-2 text-slate-400">
+                    <ShoppingBag className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Sales</span>
+                  </div>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white">{selectedDay.sales}</span>
+               </div>
+               <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
+                  <div className="flex items-center gap-2 mb-2 text-slate-400">
+                    <Clock className="w-4 h-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Hours</span>
+                  </div>
+                  <span className="text-xl font-bold text-slate-900 dark:text-white">{selectedDay.hours}h</span>
+               </div>
+            </div>
+
+            <div className="bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-2xl border border-indigo-100 dark:border-indigo-800">
+              <h5 className="text-xs font-black text-indigo-900 dark:text-indigo-300 uppercase tracking-widest mb-2 flex items-center gap-2">
+                 <Activity className="w-4 h-4" /> Manager Feedback
+              </h5>
+              <p className="text-sm font-medium text-indigo-800 dark:text-indigo-200 italic leading-relaxed">
+                "{selectedDay.feedback}"
+              </p>
+            </div>
+          </div>
         </Modal>
       )}
 
-      {/* Additional Modals from existing build preserved */}
-      {activeModal === 'earnings' && (
-        <Modal title="Earnings Statistics" onClose={() => setActiveModal(null)}>
-           <div className="space-y-6">
-              <div className="bg-slate-900 rounded-xl p-6 text-white">
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Accumulated This Month</p>
-                <p className="text-4xl font-bold">€2,450.00</p>
-              </div>
-              <div className="p-4 bg-slate-50 rounded-2xl">
-                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Payout Schedule</p>
-                 <div className="flex justify-between items-center text-sm font-bold">
-                    <span>Oct 28, 2025</span>
-                    <span className="text-emerald-600">Pending</span>
-                 </div>
-              </div>
-           </div>
-        </Modal>
-      )}
+      {activeModal && <Modal title={activeModal === 'earnings' ? t.worker.earnings : activeModal} onClose={() => setActiveModal(null)} />}
     </div>
   );
 };
