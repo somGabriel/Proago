@@ -28,7 +28,7 @@ const Navbar: React.FC<NavbarProps> = ({
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer" onClick={() => onViewChange(ViewState.FORM)}>
-              <span className="font-serif text-2xl font-bold text-white tracking-wide italic">PROAGO WORLD</span>
+              <span className="text-2xl font-black text-white tracking-tighter uppercase">PROAGO WORLD</span>
             </div>
           </div>
           
