@@ -86,9 +86,9 @@ const App: React.FC = () => {
 
   const content = useMemo(() => {
     switch (currentView) {
-      case ViewState.LANDING: return <LandingPage onAction={() => handleViewChange(ViewState.FORM)} />;
+      case ViewState.LANDING: return <LandingPage onAction={() => handleViewChange(ViewState.FORM)} language={language} />;
       case ViewState.FORM: return <LeadForm language={language} />;
-      case ViewState.DASHBOARD: return isAuthenticated && userRole === 'RECRUITER' ? <Dashboard language={language} /> : null;
+      case ViewState.DASHBOARD: return isAuthenticated && userRole === 'RECRUITER' ? <Dashboard language={language} onRegister={() => handleViewChange(ViewState.FORM)} /> : null;
       case ViewState.WORKER_DASHBOARD: return isAuthenticated && userRole === 'WORKER' ? <WorkerDashboard language={language} /> : null;
       case ViewState.MANAGER_DASHBOARD: return isAuthenticated && userRole === 'MANAGER' ? <ManagerDashboard language={language} /> : null;
       case ViewState.LOGIN: return <Login onLoginSuccess={handleLoginSuccess} language={language} />;

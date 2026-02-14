@@ -27,12 +27,16 @@ const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20">
           <div className="flex items-center">
-            <div className="flex-shrink-0 flex items-center gap-3 cursor-pointer group" onClick={() => onViewChange(ViewState.LANDING)}>
-              <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase relative overflow-hidden italic">
+            <button 
+              className="flex-shrink-0 flex items-center gap-3 cursor-pointer group focus:outline-none" 
+              onClick={() => onViewChange(ViewState.LANDING)}
+              aria-label="Proago World Home"
+            >
+              <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase relative overflow-hidden">
                 PROAGO WORLD
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-phoenix-red to-phoenix-orange transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></span>
               </span>
-            </div>
+            </button>
           </div>
           
           <div className="flex items-center space-x-3">

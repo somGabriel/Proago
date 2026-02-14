@@ -11,6 +11,41 @@ export const translations = {
       login: "Login",
       signOut: "Sign Out"
     },
+    landing: {
+      era: "The Era of the Phoenix",
+      heroTitle1: "Rise Beyond",
+      heroTitle2: "Limits.",
+      heroSubtitle: "Proago World is Luxembourg’s premier marketing powerhouse. We don’t just participate in the market—we own it.",
+      heroCTA: "Join Proago World",
+      heroSecondary: "Discover More",
+      powerTitle1: "We Build Leaders.",
+      powerTitle2: "We Scale Impact.",
+      powerDesc: "At Proago World, we believe in radical growth. We bridge the gap between human ambition and market opportunity. Our network of elite ambassadors transforms static brands into global icons.",
+      powerStats: {
+        partners: "Global Partners",
+        countries: "Active Countries",
+        success: "Success Rate"
+      },
+      mastery: "Our Core Mastery",
+      dominance: "Global Dominance",
+      services: [
+        { title: "Marketing Growth", desc: "Scaling brands with aggressive, data-driven field marketing strategies." },
+        { title: "Talent Recruitment", desc: "Building elite teams of performers who redefine industry standards." },
+        { title: "Global Expansion", desc: "Breaking borders and establishing market dominance worldwide." }
+      ],
+      careers: "Careers",
+      boldTitle: "The Future Belongs To The Bold.",
+      boldPoints: [
+        "Elite Performance Network",
+        "Uncapped Growth Potential",
+        "Global Opportunity Bridge",
+        "Prestige Recognition"
+      ],
+      careerArc: "Career Arc",
+      startRise: "Start Your Rise",
+      finalTitle1: "Stop Dreaming.",
+      finalTitle2: "Start Scaling."
+    },
     form: {
       title: "Real Connections. Real Results.",
       subtitle: "Luxembourg's premier field marketing agency. Join ProAgo World.",
@@ -95,6 +130,41 @@ export const translations = {
       login: "Connexion",
       signOut: "Déconnexion"
     },
+    landing: {
+      era: "L'Ère du Phénix",
+      heroTitle1: "Dépassez Vos",
+      heroTitle2: "Limites.",
+      heroSubtitle: "Proago World est le leader du marketing au Luxembourg. Nous ne participons pas au marché — nous le dominons.",
+      heroCTA: "Rejoindre Proago",
+      heroSecondary: "En Savoir Plus",
+      powerTitle1: "Bâtir des Leaders.",
+      powerTitle2: "Propulser l'Impact.",
+      powerDesc: "Chez Proago World, nous croyons en la croissance radicale. Nous comblons le fossé entre l'ambition humaine et les opportunités du marché.",
+      powerStats: {
+        partners: "Partenaires Globaux",
+        countries: "Pays Actifs",
+        success: "Taux de Réussite"
+      },
+      mastery: "Notre Expertise",
+      dominance: "Dominance Globale",
+      services: [
+        { title: "Croissance Marketing", desc: "Accélération des marques avec des stratégies de marketing de terrain agressives." },
+        { title: "Recrutement de Talents", desc: "Création d'équipes d'élite qui redéfinissent les standards du secteur." },
+        { title: "Expansion Globale", desc: "Franchir les frontières et établir une domination mondiale." }
+      ],
+      careers: "Carrières",
+      boldTitle: "L'Avenir Appartient Aux Audacieux.",
+      boldPoints: [
+        "Réseau de Performance d'Élite",
+        "Potentiel de Croissance Illimité",
+        "Pont vers les Opportunités Mondiales",
+        "Reconnaissance de Prestige"
+      ],
+      careerArc: "Parcours de Carrière",
+      startRise: "Commencez Votre Ascension",
+      finalTitle1: "Arrêtez de Rêver.",
+      finalTitle2: "Passez à l'Action."
+    },
     form: {
       title: "Vraies Connexions. Vrais Résultats.",
       subtitle: "La première agence de marketing de terrain au Luxembourg. Rejoignez ProAgo World.",
@@ -178,6 +248,41 @@ export const translations = {
       performance: "Meine Leistung",
       login: "Anmelden",
       signOut: "Abmelden"
+    },
+    landing: {
+      era: "Das Zeitalter des Phönix",
+      heroTitle1: "Überwinde",
+      heroTitle2: "Grenzen.",
+      heroSubtitle: "Proago World ist Luxemburgs führendes Marketing-Kraftpaket. Wir nehmen nicht nur am Markt teil — wir beherrschen ihn.",
+      heroCTA: "Proago Beitreten",
+      heroSecondary: "Mehr Entdecken",
+      powerTitle1: "Wir Bauen Leader.",
+      powerTitle2: "Wir Skalieren Impact.",
+      powerDesc: "Bei Proago World glauben wir an radikales Wachstum. Wir schließen die Lücke zwischen menschlichem Ehrgeiz und Marktchancen.",
+      powerStats: {
+        partners: "Globale Partner",
+        countries: "Aktive Länder",
+        success: "Erfolgsrate"
+      },
+      mastery: "Unsere Kernkompetenz",
+      dominance: "Globale Dominanz",
+      services: [
+        { title: "Marketing-Wachstum", desc: "Markenskalierung mit aggressiven, datengesteuerten Feldmarketing-Strategien." },
+        { title: "Talent-Recruiting", desc: "Aufbau von Eliteteams, die Industriestandards neu definieren." },
+        { title: "Globale Expansion", desc: "Grenzen überwinden und weltweite Marktdominanz etablieren." }
+      ],
+      careers: "Karriere",
+      boldTitle: "Die Zukunft Gehört Den Mutigen.",
+      boldPoints: [
+        "Elite Performance Netzwerk",
+        "Unbegrenztes Wachstumspotenzial",
+        "Globale Chancabrücke",
+        "Prestige-Anerkennung"
+      ],
+      careerArc: "Karriereweg",
+      startRise: "Starte Deinen Aufstieg",
+      finalTitle1: "Träume Nicht.",
+      finalTitle2: "Skaliere Jetzt."
     },
     form: {
       title: "Echte Verbindungen. Echte Ergebnisse.",

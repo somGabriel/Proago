@@ -15,23 +15,146 @@ type DashboardView = 'PIPELINE_LIST' | 'PIPELINE_BOARD' | 'PLANNING' | 'METRICS'
 
 interface DashboardProps {
   language: Language;
+  onRegister?: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ language }) => {
+// Helper Components moved outside for stable identity across renders
+const PriorityBadge = ({ priority }: { priority: Priority }) => {
+    const colors = { 
+      'High': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800', 
+      'Medium': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800', 
+      'Low': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700' 
+    };
+    return <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${colors[priority]}`}>{priority}</span>;
+};
+
+const ScoreBadge = ({ score, aiScore }: { score: number, aiScore?: number }) => {
+    const color = score >= 80 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : score >= 50 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-600 dark:text-slate-400';
+    return (
+      <div className="flex flex-col items-center sm:items-start">
+        <div className={`text-[10px] font-black uppercase tracking-tighter ${color}`}>Score: {Math.round(score)}</div>
+        {aiScore !== undefined && (
+          <div className="flex items-center gap-1 text-[8px] text-phoenix-red dark:text-phoenix-red font-black uppercase tracking-widest mt-0.5">
+            <Sparkles className="w-2.5 h-2.5" /> AI: {aiScore}%
+          </div>
+        )}
+      </div>
+    );
+};
+
+interface KanbanColumnProps {
+    status: LeadStatus;
+    title: string;
+    icon: any;
+    leads: Lead[];
+    dropTargetStatus: LeadStatus | null;
+    setDropTargetStatus: (status: LeadStatus | null) => void;
+    setDraggedLeadId: (id: string | null) => void;
+    draggedLeadId: string | null;
+    onStatusChange: (id: string, newStatus: LeadStatus) => void;
+    onEditLead: (lead: Lead) => void;
+}
+
+const KanbanColumn = ({ 
+    status, 
+    title, 
+    icon: Icon, 
+    leads, 
+    dropTargetStatus, 
+    setDropTargetStatus, 
+    setDraggedLeadId, 
+    draggedLeadId,
+    onStatusChange, 
+    onEditLead 
+}: KanbanColumnProps) => {
+    const columnLeads = leads.filter(l => l.status === status);
+    const isOver = dropTargetStatus === status;
+
+    return (
+        <div 
+          className={`flex-1 min-w-[320px] rounded-[32px] flex flex-col h-full max-h-full border-2 transition-all duration-300 ease-out ${
+            isOver 
+              ? 'bg-phoenix-red/5 dark:bg-phoenix-red/5 border-phoenix-red shadow-2xl scale-[1.01] ring-8 ring-phoenix-red/5' 
+              : 'bg-slate-50 dark:bg-phoenix-charcoal border-slate-200 dark:border-white/5'
+          }`} 
+          onDragEnter={(e) => { e.preventDefault(); setDropTargetStatus(status); }}
+          onDragOver={(e) => e.preventDefault()}
+          onDragLeave={(e) => { e.preventDefault(); if (dropTargetStatus === status) setDropTargetStatus(null); }}
+          onDrop={async (e) => {
+            e.preventDefault();
+            setDropTargetStatus(null);
+            // Fallback to state if dataTransfer fails for some reason
+            const id = e.dataTransfer.getData('text/plain') || draggedLeadId;
+            if (id) await onStatusChange(id, status);
+          }}
+        >
+            <div className={`p-5 border-b-2 flex justify-between items-center rounded-t-[32px] ${
+              isOver ? 'bg-white dark:bg-slate-800 border-phoenix-red' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-white/5'
+            }`}>
+                <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${isOver ? 'bg-phoenix-red text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <h3 className="font-black text-[11px] uppercase tracking-[0.2em] text-slate-900 dark:text-white italic">{title}</h3>
+                </div>
+                <span className="text-[10px] font-black px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 rounded-full">
+                  {columnLeads.length}
+                </span>
+            </div>
+            
+            <div className="p-4 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
+                {columnLeads.map(lead => (
+                    <div 
+                      key={lead.id} 
+                      draggable 
+                      onDragStart={(e) => { 
+                          setDraggedLeadId(lead.id);
+                          // Explicitly set data to ensure drag starts immediately on first click
+                          e.dataTransfer.setData('text/plain', lead.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => { 
+                          setDraggedLeadId(null); 
+                          setDropTargetStatus(null);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onEditLead(lead); }}
+                      className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-2 border-slate-50 dark:border-white/5 cursor-grab active:cursor-grabbing hover:border-phoenix-red dark:hover:border-phoenix-red transition-all group focus:ring-2 focus:ring-phoenix-red focus:outline-none" 
+                      onClick={() => onEditLead(lead)}
+                    >
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="flex flex-col">
+                              <h4 className="font-black text-slate-900 dark:text-white text-sm group-hover:text-phoenix-red transition-colors uppercase tracking-tight italic">{lead.fullName}</h4>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{lead.postAppliedFor}</p>
+                            </div>
+                            <PriorityBadge priority={lead.priority} />
+                        </div>
+                        <div className="flex justify-between items-center pt-4 border-t border-slate-50 dark:border-white/5">
+                            <ScoreBadge score={lead.score} aiScore={lead.aiScore} />
+                            <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                            </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const Dashboard: React.FC<DashboardProps> = ({ language, onRegister }) => {
   const t = useTranslation(language);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [viewMode, setViewMode] = useState<DashboardView>('PIPELINE_BOARD');
-  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
   const [dropTargetStatus, setDropTargetStatus] = useState<LeadStatus | null>(null);
-  const dragCounter = useRef<Record<string, number>>({});
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     loadLeads();
@@ -59,30 +182,12 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
       setEditingLead(null);
   };
 
-  const handleCvUploadForLead = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] && editingLead) {
-      const file = e.target.files[0];
-      setIsAnalyzing(true);
-      try {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-          const base64 = reader.result as string;
-          const analysis = await analyzeCV(base64, editingLead.postAppliedFor);
-          setEditingLead({
-            ...editingLead,
-            cvBase64: base64,
-            cvFileName: file.name,
-            aiScore: analysis.score,
-            aiSummary: analysis.summary
-          });
-          setIsAnalyzing(false);
-        };
-      } catch (err) {
-        console.error("AI Analysis failed:", err);
-        setIsAnalyzing(false);
-      }
-    }
+  const handleSendEmail = (email: string) => {
+    alert(`Initiating outreach protocol to: ${email}\nEmail service initialized.`);
+  };
+
+  const handleSendSMS = (phone: string) => {
+    alert(`Transmitting cellular message to: ${phone}\nSMS relay active.`);
   };
 
   const filteredLeads = React.useMemo(() => {
@@ -98,93 +203,6 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
     });
     return result;
   }, [leads, filter]);
-
-  const PriorityBadge = ({ priority }: { priority: Priority }) => {
-      const colors = { 
-        'High': 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800', 
-        'Medium': 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-800', 
-        'Low': 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-slate-700' 
-      };
-      return <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest border ${colors[priority]}`}>{priority}</span>;
-  };
-
-  const ScoreBadge = ({ score, aiScore }: { score: number, aiScore?: number }) => {
-      const color = score >= 80 ? 'text-emerald-600 dark:text-emerald-400 font-bold' : score >= 50 ? 'text-amber-600 dark:text-amber-400 font-medium' : 'text-slate-600 dark:text-slate-400';
-      return (
-        <div className="flex flex-col items-center sm:items-start">
-          <div className={`text-[10px] font-black uppercase tracking-tighter ${color}`}>Score: {Math.round(score)}</div>
-          {aiScore !== undefined && (
-            <div className="flex items-center gap-1 text-[8px] text-phoenix-red dark:text-phoenix-red font-black uppercase tracking-widest mt-0.5">
-              <Sparkles className="w-2.5 h-2.5" /> AI: {aiScore}%
-            </div>
-          )}
-        </div>
-      );
-  };
-
-  const KanbanColumn = ({ status, title, icon: Icon }: { status: LeadStatus, title: string, icon: any }) => {
-      const columnLeads = filteredLeads.filter(l => l.status === status);
-      const isOver = dropTargetStatus === status;
-
-      return (
-          <div 
-            className={`flex-1 min-w-[320px] rounded-[32px] flex flex-col h-full max-h-full border-2 transition-all duration-300 ease-out ${
-              isOver 
-                ? 'bg-phoenix-red/5 dark:bg-phoenix-red/5 border-phoenix-red shadow-2xl scale-[1.01] ring-8 ring-phoenix-red/5' 
-                : 'bg-slate-50 dark:bg-phoenix-charcoal border-slate-200 dark:border-white/5'
-            }`} 
-            onDragEnter={(e) => { e.preventDefault(); setDropTargetStatus(status); }}
-            onDragOver={(e) => e.preventDefault()}
-            onDragLeave={(e) => { e.preventDefault(); if (dropTargetStatus === status) setDropTargetStatus(null); }}
-            onDrop={async (e) => {
-              e.preventDefault();
-              setDropTargetStatus(null);
-              if (draggedLeadId) await handleStatusChange(draggedLeadId, status);
-            }}
-          >
-              <div className={`p-5 border-b-2 flex justify-between items-center rounded-t-[32px] ${
-                isOver ? 'bg-white dark:bg-slate-800 border-phoenix-red' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-white/5'
-              }`}>
-                  <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-xl ${isOver ? 'bg-phoenix-red text-white' : 'bg-slate-100 dark:bg-white/5 text-slate-400'}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <h3 className="font-black text-[11px] uppercase tracking-[0.2em] text-slate-900 dark:text-white italic">{title}</h3>
-                  </div>
-                  <span className="text-[10px] font-black px-2.5 py-1 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 rounded-full">
-                    {columnLeads.length}
-                  </span>
-              </div>
-              
-              <div className="p-4 flex-1 overflow-y-auto space-y-4 custom-scrollbar">
-                  {columnLeads.map(lead => (
-                      <div 
-                        key={lead.id} 
-                        draggable 
-                        onDragStart={() => setDraggedLeadId(lead.id)}
-                        onDragEnd={() => setDraggedLeadId(null)}
-                        className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border-2 border-slate-50 dark:border-white/5 cursor-grab active:cursor-grabbing hover:border-phoenix-red dark:hover:border-phoenix-red transition-all group" 
-                        onClick={() => { setEditingLead(lead); setIsEditModalOpen(true); }}
-                      >
-                          <div className="flex justify-between items-start mb-4">
-                              <div className="flex flex-col">
-                                <h4 className="font-black text-slate-900 dark:text-white text-sm group-hover:text-phoenix-red transition-colors uppercase tracking-tight italic">{lead.fullName}</h4>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{lead.postAppliedFor}</p>
-                              </div>
-                              <PriorityBadge priority={lead.priority} />
-                          </div>
-                          <div className="flex justify-between items-center pt-4 border-t border-slate-50 dark:border-white/5">
-                              <ScoreBadge score={lead.score} aiScore={lead.aiScore} />
-                              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
-                                <Clock className="w-3 h-3" /> {new Date(lead.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                              </div>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          </div>
-      );
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-5rem)] flex flex-col overflow-hidden animate-fade-in">
@@ -207,17 +225,22 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
             <div className="absolute inset-y-0 left-0 flex items-center pl-4"><Search className="h-4 w-4 text-slate-400 group-focus-within:text-phoenix-red transition-colors" /></div>
             <input type="text" className="block w-full rounded-2xl border-slate-200 dark:border-white/10 pl-11 focus:ring-2 focus:ring-phoenix-red focus:border-transparent py-3.5 border bg-white dark:bg-phoenix-charcoal text-slate-900 dark:text-white transition-all font-medium text-sm" placeholder={t.dashboard.search} value={filter} onChange={(e) => setFilter(e.target.value)} />
         </div>
-        <button onClick={() => (window as any).handleAction?.()} className="w-full sm:w-auto ml-auto inline-flex items-center justify-center px-8 py-4 bg-slate-900 dark:bg-phoenix-red text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-2xl text-white hover:bg-phoenix-orange transition-all hover:scale-[1.02] italic"><Plus className="h-4 w-4 mr-2" /> Register Talent</button>
+        <button 
+          onClick={onRegister} 
+          className="w-full sm:w-auto ml-auto inline-flex items-center justify-center px-8 py-4 bg-slate-900 dark:bg-phoenix-red text-[11px] font-black uppercase tracking-widest rounded-2xl shadow-2xl text-white hover:bg-phoenix-orange transition-all hover:scale-[1.02] italic"
+        >
+          <Plus className="h-4 w-4 mr-2" /> Register Talent
+        </button>
       </div>
 
       {viewMode === 'PIPELINE_BOARD' && (
           <div className="flex-1 overflow-x-auto overflow-y-hidden pb-6 custom-scrollbar">
             <div className="flex h-full gap-8 min-w-[1600px] px-1 py-1">
-              <KanbanColumn status="Lead" title={t.dashboard.stages.lead} icon={Briefcase} />
-              <KanbanColumn status="Interviewing" title={t.dashboard.stages.interviewing} icon={UserCheck} />
-              <KanbanColumn status="Formation" title={t.dashboard.stages.formation} icon={GraduationCap} />
-              <KanbanColumn status="Recruiter" title={t.dashboard.stages.recruiter} icon={Users} />
-              <KanbanColumn status="Rejected" title={t.dashboard.stages.rejected} icon={XCircle} />
+              <KanbanColumn status="Lead" title={t.dashboard.stages.lead} icon={Briefcase} leads={filteredLeads} dropTargetStatus={dropTargetStatus} setDropTargetStatus={setDropTargetStatus} setDraggedLeadId={setDraggedLeadId} draggedLeadId={draggedLeadId} onStatusChange={handleStatusChange} onEditLead={(lead) => { setEditingLead(lead); setIsEditModalOpen(true); }} />
+              <KanbanColumn status="Interviewing" title={t.dashboard.stages.interviewing} icon={UserCheck} leads={filteredLeads} dropTargetStatus={dropTargetStatus} setDropTargetStatus={setDropTargetStatus} setDraggedLeadId={setDraggedLeadId} draggedLeadId={draggedLeadId} onStatusChange={handleStatusChange} onEditLead={(lead) => { setEditingLead(lead); setIsEditModalOpen(true); }} />
+              <KanbanColumn status="Formation" title={t.dashboard.stages.formation} icon={GraduationCap} leads={filteredLeads} dropTargetStatus={dropTargetStatus} setDropTargetStatus={setDropTargetStatus} setDraggedLeadId={setDraggedLeadId} draggedLeadId={draggedLeadId} onStatusChange={handleStatusChange} onEditLead={(lead) => { setEditingLead(lead); setIsEditModalOpen(true); }} />
+              <KanbanColumn status="Recruiter" title={t.dashboard.stages.recruiter} icon={Users} leads={filteredLeads} dropTargetStatus={dropTargetStatus} setDropTargetStatus={setDropTargetStatus} setDraggedLeadId={setDraggedLeadId} draggedLeadId={draggedLeadId} onStatusChange={handleStatusChange} onEditLead={(lead) => { setEditingLead(lead); setIsEditModalOpen(true); }} />
+              <KanbanColumn status="Rejected" title={t.dashboard.stages.rejected} icon={XCircle} leads={filteredLeads} dropTargetStatus={dropTargetStatus} setDropTargetStatus={setDropTargetStatus} setDraggedLeadId={setDraggedLeadId} draggedLeadId={draggedLeadId} onStatusChange={handleStatusChange} onEditLead={(lead) => { setEditingLead(lead); setIsEditModalOpen(true); }} />
             </div>
           </div>
       )}
@@ -370,11 +393,17 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
                         <div className="space-y-6">
                             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center mb-8 border-l-4 border-phoenix-red pl-4 italic">Engagement Engine</h3>
                             <div className="grid grid-cols-2 gap-4">
-                               <button className="flex flex-col items-center justify-center gap-3 p-8 bg-slate-900 dark:bg-slate-800 rounded-3xl hover:bg-phoenix-red transition-all group shadow-xl italic">
+                               <button 
+                                onClick={() => handleSendEmail(editingLead.email)}
+                                className="flex flex-col items-center justify-center gap-3 p-8 bg-slate-900 dark:bg-slate-800 rounded-3xl hover:bg-phoenix-red transition-all group shadow-xl italic"
+                               >
                                  <Mail className="w-6 h-6 text-phoenix-red group-hover:text-white transition-colors" />
                                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Send Email</span>
                                </button>
-                               <button className="flex flex-col items-center justify-center gap-3 p-8 bg-slate-900 dark:bg-slate-800 rounded-3xl hover:bg-phoenix-red transition-all group shadow-xl italic">
+                               <button 
+                                onClick={() => handleSendSMS(editingLead.phone)}
+                                className="flex flex-col items-center justify-center gap-3 p-8 bg-slate-900 dark:bg-slate-800 rounded-3xl hover:bg-phoenix-red transition-all group shadow-xl italic"
+                               >
                                  <MessageSquare className="w-6 h-6 text-phoenix-red group-hover:text-white transition-colors" />
                                  <span className="text-[10px] font-black uppercase tracking-widest text-white">Send SMS</span>
                                </button>
@@ -383,7 +412,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language }) => {
                       </div>
                   </div>
                   <div className="p-10 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5 flex justify-end gap-6 shrink-0">
-                    <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.dashboard.profile.discard}</button>
+                    <button type="button" onClick={() => setIsEditModalOpen(false)} className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">Discard Changes</button>
                     <button type="button" onClick={handleEditSubmit} className="px-12 py-4 text-[11px] font-black uppercase tracking-widest text-white bg-slate-900 dark:bg-phoenix-red rounded-2xl hover:bg-phoenix-orange shadow-2xl transition-all italic">Execute Update</button>
                   </div>
               </div>
