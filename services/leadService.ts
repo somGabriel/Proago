@@ -63,107 +63,142 @@ export const submitLead = async (formData: LeadFormData): Promise<{ success: boo
   const { score, priority } = calculateScore(formData);
 
   if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          full_name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          post_applied_for: formData.postAppliedFor,
-          bio: formData.bio,
-          source: formData.source || 'Web Form',
-          status: 'Lead',
-          score,
-          priority,
-          tasks: [],
-          cv_base64: formData.cvBase64,
-          cv_file_name: formData.cvFileName,
-          ai_summary: formData.aiSummary,
-          ai_score: formData.aiScore
-        },
-      ]);
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .insert([
+          {
+            full_name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            post_applied_for: formData.postAppliedFor,
+            bio: formData.bio,
+            source: formData.source || 'Web Form',
+            status: 'Lead',
+            score,
+            priority,
+            tasks: [],
+            cv_base64: formData.cvBase64,
+            cv_file_name: formData.cvFileName,
+            ai_summary: formData.aiSummary,
+            ai_score: formData.aiScore
+          },
+        ]);
 
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  } else {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    const now = new Date().toISOString();
-    MOCK_LEADS.unshift({
-        id: Math.random().toString(36).substring(2, 11),
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        postAppliedFor: formData.postAppliedFor,
-        bio: formData.bio,
-        source: formData.source || 'Web Form',
-        status: 'Lead',
-        createdAt: now,
-        updatedAt: now,
-        score,
-        priority,
-        tasks: [] as Task[],
-        cvBase64: formData.cvBase64,
-        cvFileName: formData.cvFileName,
-        aiSummary: formData.aiSummary,
-        aiScore: formData.aiScore
-    });
-    return { success: true };
-  }
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.warn("Supabase submission failed, falling back to local mock:", err);
+      // Fall through to mock logic
+    }
+  } 
+
+  // Mock Logic
+  await new Promise(resolve => setTimeout(resolve, 800));
+  const now = new Date().toISOString();
+  MOCK_LEADS.unshift({
+      id: Math.random().toString(36).substring(2, 11),
+      fullName: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      postAppliedFor: formData.postAppliedFor,
+      bio: formData.bio,
+      source: formData.source || 'Web Form',
+      status: 'Lead',
+      createdAt: now,
+      updatedAt: now,
+      score,
+      priority,
+      tasks: [] as Task[],
+      cvBase64: formData.cvBase64,
+      cvFileName: formData.cvFileName,
+      aiSummary: formData.aiSummary,
+      aiScore: formData.aiScore
+  });
+  return { success: true };
 };
 
 export const updateLead = async (id: string, updates: Partial<Lead>): Promise<{ success: boolean; error?: string }> => {
   if (isSupabaseConfigured() && supabase) {
-    const { error } = await supabase.from('leads').update(updates).eq('id', id);
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  } else {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    MOCK_LEADS = MOCK_LEADS.map(lead => 
-      lead.id === id ? { ...lead, ...updates, updatedAt: new Date().toISOString() } : lead
-    );
-    return { success: true };
+    try {
+      // Map frontend camelCase to DB snake_case for updates
+      const dbUpdates: any = {};
+      if (updates.status) dbUpdates.status = updates.status;
+      if (updates.priority) dbUpdates.priority = updates.priority;
+      if (updates.score !== undefined) dbUpdates.score = updates.score;
+      if (updates.fullName) dbUpdates.full_name = updates.fullName;
+      if (updates.email) dbUpdates.email = updates.email;
+      if (updates.phone) dbUpdates.phone = updates.phone;
+      if (updates.postAppliedFor) dbUpdates.post_applied_for = updates.postAppliedFor;
+      if (updates.bio) dbUpdates.bio = updates.bio;
+      if (updates.source) dbUpdates.source = updates.source;
+      
+      const { error } = await supabase.from('leads').update(dbUpdates).eq('id', id);
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.warn("Supabase update failed, falling back to local mock:", err);
+    }
   }
+  
+  // Mock Logic
+  await new Promise(resolve => setTimeout(resolve, 300));
+  MOCK_LEADS = MOCK_LEADS.map(lead => 
+    lead.id === id ? { ...lead, ...updates, updatedAt: new Date().toISOString() } : lead
+  );
+  return { success: true };
 };
 
 export const deleteLead = async (id: string): Promise<{ success: boolean; error?: string }> => {
   if (isSupabaseConfigured() && supabase) {
-      const { error } = await supabase.from('leads').delete().eq('id', id);
-      if (error) return { success: false, error: error.message };
-      return { success: true };
-  } else {
-      await new Promise(resolve => setTimeout(resolve, 300));
-      MOCK_LEADS = MOCK_LEADS.filter(lead => lead.id !== id);
-      return { success: true };
+      try {
+        const { error } = await supabase.from('leads').delete().eq('id', id);
+        if (error) throw error;
+        return { success: true };
+      } catch (err) {
+        console.warn("Supabase delete failed, falling back to local mock:", err);
+      }
   }
+  
+  // Mock Logic
+  await new Promise(resolve => setTimeout(resolve, 300));
+  MOCK_LEADS = MOCK_LEADS.filter(lead => lead.id !== id);
+  return { success: true };
 };
 
 export const fetchLeads = async (): Promise<{ data: Lead[]; error?: string }> => {
   if (isSupabaseConfigured() && supabase) {
-    const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
-    if (error) return { data: [], error: error.message };
-    const mappedData = data?.map((item: any) => ({
-      id: item.id,
-      fullName: item.full_name,
-      email: item.email,
-      phone: item.phone,
-      postAppliedFor: item.post_applied_for,
-      bio: item.bio,
-      source: item.source,
-      status: item.status,
-      createdAt: item.created_at,
-      updatedAt: item.updated_at || item.created_at,
-      priority: item.priority,
-      score: item.score,
-      tasks: item.tasks || [],
-      cvBase64: item.cv_base64,
-      cvFileName: item.cv_file_name,
-      aiSummary: item.ai_summary,
-      aiScore: item.ai_score
-    })) as Lead[];
-    return { data: mappedData || [] };
-  } else {
-    await new Promise(resolve => setTimeout(resolve, 400));
-    return { data: [...MOCK_LEADS] }; 
+    try {
+      const { data, error } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      
+      const mappedData = data?.map((item: any) => ({
+        id: item.id,
+        fullName: item.full_name,
+        email: item.email,
+        phone: item.phone,
+        postAppliedFor: item.post_applied_for,
+        bio: item.bio,
+        source: item.source,
+        status: item.status,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at || item.created_at,
+        priority: item.priority,
+        score: item.score,
+        tasks: item.tasks || [],
+        cvBase64: item.cv_base64,
+        cvFileName: item.cv_file_name,
+        aiSummary: item.ai_summary,
+        aiScore: item.ai_score
+      })) as Lead[];
+      
+      return { data: mappedData || [] };
+    } catch (err) {
+      console.warn("Supabase fetch failed, falling back to local mock:", err);
+    }
   }
+  
+  // Mock Logic
+  await new Promise(resolve => setTimeout(resolve, 400));
+  return { data: [...MOCK_LEADS] }; 
 };

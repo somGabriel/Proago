@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { LeadFormData, Language } from '../types';
 import { submitLead } from '../services/leadService';
 import { analyzeCV } from '../services/geminiService';
-import { Send, CheckCircle, Loader2, AlertCircle, FileUp, Paperclip, X, Sparkles, BrainCircuit, Flame } from 'lucide-react';
+import { Send, CheckCircle, Loader2, AlertCircle, FileUp, Paperclip, Sparkles, BrainCircuit, Flame } from 'lucide-react';
 import { useTranslation } from '../services/translations';
 
 interface LeadFormProps {
@@ -119,7 +119,7 @@ const LeadForm: React.FC<LeadFormProps> = ({ language }) => {
     <div className="max-w-4xl mx-auto mt-12 px-4 sm:px-6 lg:px-8 mb-24 relative">
       <div className="text-center mb-16 space-y-4">
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-phoenix-red/10 border border-phoenix-red/20 rounded-full mb-2">
-          <Flame className="w-4 h-4 text-phoenix-red" />
+          <Flame className="w-4 h-4 text-phoenix-red animate-fire" />
           <span className="text-[10px] font-black uppercase tracking-[0.2em] text-phoenix-red">Future Leaders Only</span>
         </div>
         <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-slate-900 dark:text-white uppercase italic leading-[0.85]">

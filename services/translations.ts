@@ -13,8 +13,8 @@ export const translations = {
     },
     landing: {
       era: "The Era of the Phoenix",
-      heroTitle1: "Rise Beyond",
-      heroTitle2: "Limits.",
+      heroTitle1: "The Art of Marketing",
+      heroTitle2: "In Person.",
       heroSubtitle: "Proago World is Luxembourg’s premier marketing powerhouse. We don’t just participate in the market—we own it.",
       heroCTA: "Join Proago World",
       heroSecondary: "Discover More",
@@ -132,8 +132,8 @@ export const translations = {
     },
     landing: {
       era: "L'Ère du Phénix",
-      heroTitle1: "Dépassez Vos",
-      heroTitle2: "Limites.",
+      heroTitle1: "L'Art du Marketing",
+      heroTitle2: "En Personne.",
       heroSubtitle: "Proago World est le leader du marketing au Luxembourg. Nous ne participons pas au marché — nous le dominons.",
       heroCTA: "Rejoindre Proago",
       heroSecondary: "En Savoir Plus",
@@ -222,7 +222,7 @@ export const translations = {
     worker: {
       title: "Tableau de Bord Promoteur",
       rank: "Rang Actuel",
-      performance: "Performance",
+      performance: "Leistung",
       ranking: "Classement",
       shifts: "Missions",
       earnings: "Gains",
@@ -251,8 +251,8 @@ export const translations = {
     },
     landing: {
       era: "Das Zeitalter des Phönix",
-      heroTitle1: "Überwinde",
-      heroTitle2: "Grenzen.",
+      heroTitle1: "Die Kunst des Marketings",
+      heroTitle2: "Persönlich.",
       heroSubtitle: "Proago World ist Luxemburgs führendes Marketing-Kraftpaket. Wir nehmen nicht nur am Markt teil — wir beherrschen ihn.",
       heroCTA: "Proago Beitreten",
       heroSecondary: "Mehr Entdecken",

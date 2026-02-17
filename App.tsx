@@ -8,6 +8,7 @@ import WorkerDashboard from './components/WorkerDashboard';
 import ManagerDashboard from './components/ManagerDashboard';
 import Login from './components/Login';
 import { ViewState, UserRole, Theme, Language } from './types';
+import { Flame } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.LANDING);
@@ -26,7 +27,6 @@ const App: React.FC = () => {
     return 'en';
   });
 
-  // State for content transition
   const [fade, setFade] = useState(true);
 
   useEffect(() => {
@@ -117,9 +117,14 @@ const App: React.FC = () => {
       <footer className="bg-slate-50 dark:bg-phoenix-black/80 backdrop-blur-md border-t border-slate-200 dark:border-white/5 mt-auto transition-colors duration-500">
         <div className="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">PROAGO WORLD</span>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 bg-slate-900 dark:bg-phoenix-red rounded-lg flex items-center justify-center text-white">
+                <Flame className="w-5 h-5" />
+              </div>
+              <span className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">PROAGO WORLD</span>
+            </div>
             <p className="text-center text-[10px] font-black uppercase tracking-widest text-slate-500">
-              &copy; {new Date().getFullYear()} PROAGO WORLD. RISE BEYOND LIMITS.
+              &copy; {new Date().getFullYear()} PROAGO WORLD. THE ART OF MARKETING IN PERSON.
             </p>
           </div>
         </div>

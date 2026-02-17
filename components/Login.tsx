@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, User, ArrowRight, AlertCircle, ShieldCheck, Briefcase, KeyRound, Flame } from 'lucide-react';
+import { Lock, User, ArrowRight, AlertCircle, Briefcase, KeyRound, Flame } from 'lucide-react';
 import { UserRole, Language } from '../types';
 import { useTranslation } from '../services/translations';
 
@@ -45,8 +45,8 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, language }) => {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-        <div className="mx-auto h-20 w-20 bg-slate-900 dark:bg-phoenix-red rounded-[24px] flex items-center justify-center shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
-          <Flame className="h-10 w-10 text-white animate-fire" />
+        <div className="mx-auto h-24 w-24 bg-slate-900 dark:bg-phoenix-red rounded-[32px] flex items-center justify-center shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+          <Flame className="h-12 w-12 text-white animate-fire" />
         </div>
         <h2 className="mt-8 text-center text-4xl font-black tracking-tighter text-slate-900 dark:text-white italic uppercase">
           PROAGO PORTAL

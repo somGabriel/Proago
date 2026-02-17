@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ViewState, UserRole, Theme, Language } from '../types';
-import { LayoutDashboard, UserPlus, LogIn, Award, TrendingUp, Sun, Moon, Globe, LogOut } from 'lucide-react';
+import { LayoutDashboard, UserPlus, LogIn, Award, TrendingUp, Sun, Moon, LogOut, Flame } from 'lucide-react';
 import { useTranslation } from '../services/translations';
 
 interface NavbarProps {
@@ -32,7 +32,10 @@ const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onViewChange(ViewState.LANDING)}
               aria-label="Proago World Home"
             >
-              <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase relative overflow-hidden">
+              <div className="h-10 w-10 bg-slate-900 dark:bg-phoenix-red rounded-xl flex items-center justify-center text-white shadow-lg group-hover:rotate-12 transition-transform">
+                <Flame className="w-6 h-6 animate-fire" />
+              </div>
+              <span className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase relative overflow-hidden italic">
                 PROAGO WORLD
                 <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-phoenix-red to-phoenix-orange transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300"></span>
               </span>

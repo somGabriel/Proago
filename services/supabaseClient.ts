@@ -1,11 +1,9 @@
+
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-// NOTE: In a real environment, these would be populated from process.env
-// For this demo build, we will check if they exist, otherwise we return null
-// and the service layer will handle the "Demo Mode" fallback.
-
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+// Configured with provided credentials
+const supabaseUrl = 'https://ihhmsaqalspmqnbzdtnw.supabase.co';
+const supabaseAnonKey = 'sb_publishable_RBObI7QrXtHev-9JyO7bdw_JpChNGAO';
 
 export const supabase: SupabaseClient | null = (supabaseUrl && supabaseAnonKey)
   ? createClient(supabaseUrl, supabaseAnonKey)

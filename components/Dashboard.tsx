@@ -1,13 +1,11 @@
 
-import React, { useEffect, useState, useRef } from 'react';
-import { Lead, LeadStatus, LeadFormData, Priority, Task, Language } from '../types';
-import { fetchLeads, updateLead, deleteLead, submitLead } from '../services/leadService';
-import { analyzeCV } from '../services/geminiService';
+import React, { useEffect, useState } from 'react';
+import { Lead, LeadStatus, Priority, Language } from '../types';
+import { fetchLeads, updateLead } from '../services/leadService';
 import { 
-    Loader2, AlertCircle, Filter, Search, Clock, ArrowUpDown, Pencil, Check, X, 
-    Briefcase, UserCheck, GraduationCap, Users, XCircle, Trash2, Plus, Calendar, 
-    LayoutGrid, List as ListIcon, BarChart3, CheckSquare, Square, FileText, Send, Mail, MessageSquare,
-    Phone, GripVertical, Copy, ExternalLink, TrendingUp, ChevronRight, Sparkles, BrainCircuit, FileUp, Flame
+    Search, Clock, Briefcase, UserCheck, GraduationCap, Users, XCircle, Plus, 
+    LayoutGrid, List as ListIcon, FileText, Mail, MessageSquare,
+    Copy, ChevronRight, Sparkles, BrainCircuit, X, Flame
 } from 'lucide-react';
 import { useTranslation } from '../services/translations';
 
@@ -83,7 +81,6 @@ const KanbanColumn = ({
           onDrop={async (e) => {
             e.preventDefault();
             setDropTargetStatus(null);
-            // Fallback to state if dataTransfer fails for some reason
             const id = e.dataTransfer.getData('text/plain') || draggedLeadId;
             if (id) await onStatusChange(id, status);
           }}
@@ -109,7 +106,6 @@ const KanbanColumn = ({
                       draggable 
                       onDragStart={(e) => { 
                           setDraggedLeadId(lead.id);
-                          // Explicitly set data to ensure drag starts immediately on first click
                           e.dataTransfer.setData('text/plain', lead.id);
                           e.dataTransfer.effectAllowed = 'move';
                       }}
@@ -287,7 +283,7 @@ const Dashboard: React.FC<DashboardProps> = ({ language, onRegister }) => {
                                   </div>
                                   <div>
                                     <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight italic group-hover:text-phoenix-red transition-colors">{lead.fullName}</p>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{lead.postAppliedFor}</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{lead.postAppliedFor} <span className="mx-1">•</span> <span className="text-slate-500">{lead.email}</span></p>
                                   </div>
                                 </div>
                               </td>

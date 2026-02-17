@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { 
-  ArrowRight, Sparkles, TrendingUp, Globe, Users, Target, Zap, 
-  ChevronDown, Flame, Award, ShieldCheck, Crown, Heart 
+  ArrowRight, TrendingUp, Globe, Users, Target, Zap, 
+  ChevronDown, Crown, Award, TrendingUp as TrendingUpIcon, Flame
 } from 'lucide-react';
 import { Language } from '../types';
 import { useTranslation } from '../services/translations';
@@ -69,7 +69,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAction, language }) => {
             </div>
           </div>
 
-          <h1 className="text-6xl sm:text-8xl md:text-[10rem] lg:text-[12rem] font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.8] italic py-4">
+          <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-[8rem] xl:text-[9rem] font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-[0.85] italic py-4">
             <div className="relative">
                <div className="animate-fade-in-up pb-2" style={{ animationDelay: '0.3s' }}>{t.landing.heroTitle1}</div>
             </div>
@@ -203,7 +203,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAction, language }) => {
                <div className="space-y-12">
                   <div className="flex justify-between items-center pb-10 border-b border-slate-100 dark:border-white/5">
                      <span className="text-[14px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.landing.careerArc}</span>
-                     <TrendingUp className="w-7 h-7 text-emerald-500 animate-pulse" />
+                     <TrendingUpIcon className="w-7 h-7 text-emerald-500 animate-pulse" />
                   </div>
                   <div className="relative h-4 w-full bg-slate-100 dark:bg-white/5 rounded-full">
                      <div className="absolute top-0 left-0 h-full w-2/3 bg-phoenix-red rounded-full shadow-[0_0_20px_rgba(255,42,42,0.4)] dark:shadow-[0_0_30px_rgba(255,42,42,0.8)] animate-pulse"></div>
